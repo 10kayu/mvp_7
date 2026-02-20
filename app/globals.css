@@ -1,135 +1,87 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-
-@custom-variant dark (&:is(.dark *));
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  /* Updated theme to match AutoTools design with dark blue primary and category accent colors */
-  --background: oklch(0.98 0 0);
-  --foreground: oklch(0.15 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0 0);
-  --primary: oklch(0.25 0.08 240); /* Dark blue #0f172a equivalent */
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.96 0 0);
-  --secondary-foreground: oklch(0.25 0.08 240);
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.55 0 0);
-  --accent: oklch(0.96 0 0);
-  --accent-foreground: oklch(0.25 0.08 240);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0 0);
-  --input: oklch(0.92 0 0);
-  --ring: oklch(0.25 0.08 240);
+  --background: 0 0% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 222 47% 18%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 18%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 46%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 18%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 222 47% 18%;
 
-  /* Category accent colors */
-  --job-application: oklch(0.65 0.18 15); /* Coral #FF6B6B */
-  --social-media: oklch(0.75 0.15 85); /* Yellow #FFBE0B */
-  --data-extraction: oklch(0.65 0.2 35); /* Orange #FB5607 */
-  --file-converters: oklch(0.7 0.12 220); /* Sky blue #45B7D1 */
-  --productivity: oklch(0.6 0.25 330); /* Pink #FF006E */
+  --job-application: hsl(5 100% 65%);
+  --social-media: hsl(45 100% 53%);
+  --data-extraction: hsl(20 96% 50%);
+  --file-converters: hsl(196 62% 55%);
+  --productivity: hsl(330 100% 50%);
 
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.15 0 0);
-  --sidebar-primary: oklch(0.25 0.08 240);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.96 0 0);
-  --sidebar-accent-foreground: oklch(0.25 0.08 240);
-  --sidebar-border: oklch(0.92 0 0);
-  --sidebar-ring: oklch(0.25 0.08 240);
+  --sidebar: 0 0% 98%;
+  --sidebar-foreground: 222 47% 11%;
+  --sidebar-primary: 222 47% 18%;
+  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-accent: 210 40% 96%;
+  --sidebar-accent-foreground: 222 47% 18%;
+  --sidebar-border: 214 32% 91%;
+  --sidebar-ring: 222 47% 18%;
 }
 
 .dark {
-  /* Updated dark theme: lifted brightness and softened contrast to make it less "pitch black" */
-  --background: oklch(0.18 0.015 240); /* Soft navy background */
-  --foreground: oklch(0.92 0.005 240); /* Softer off-white foreground */
-  --card: oklch(0.21 0.015 240); /* Elevated card surface */
-  --card-foreground: oklch(0.92 0.005 240);
-  --popover: oklch(0.21 0.015 240);
-  --popover-foreground: oklch(0.92 0.005 240);
-  --primary: oklch(0.8 0.1 220); /* Brighter, more accessible primary blue */
-  --primary-foreground: oklch(0.15 0.015 240);
-  --secondary: oklch(0.25 0.015 240);
-  --secondary-foreground: oklch(0.92 0.005 240);
-  --muted: oklch(0.25 0.015 240);
-  --muted-foreground: oklch(0.7 0.01 240); /* Brighter muted text for readability */
-  --accent: oklch(0.25 0.015 240);
-  --accent-foreground: oklch(0.92 0.005 240);
-  --destructive: oklch(0.55 0.2 25);
-  --destructive-foreground: oklch(0.95 0 0);
-  --border: oklch(0.26 0.015 240); /* Visible but subtle borders */
-  --input: oklch(0.26 0.015 240);
-  --ring: oklch(0.7 0.1 220);
+  --background: 220 24% 16%;
+  --foreground: 210 40% 92%;
+  --card: 220 22% 20%;
+  --card-foreground: 210 40% 92%;
+  --popover: 220 22% 20%;
+  --popover-foreground: 210 40% 92%;
+  --primary: 210 85% 72%;
+  --primary-foreground: 222 47% 11%;
+  --secondary: 220 18% 24%;
+  --secondary-foreground: 210 40% 92%;
+  --muted: 220 18% 24%;
+  --muted-foreground: 215 20% 70%;
+  --accent: 220 18% 24%;
+  --accent-foreground: 210 40% 92%;
+  --destructive: 0 72% 50%;
+  --destructive-foreground: 210 40% 95%;
+  --border: 220 16% 28%;
+  --input: 220 16% 28%;
+  --ring: 210 85% 72%;
 
-  /* Category accent colors for dark mode - slightly more vibrant */
-  --job-application: oklch(0.75 0.15 15);
-  --social-media: oklch(0.85 0.12 85);
-  --data-extraction: oklch(0.75 0.18 35);
-  --file-converters: oklch(0.8 0.1 220);
-  --productivity: oklch(0.75 0.2 330);
+  --job-application: hsl(5 100% 72%);
+  --social-media: hsl(45 100% 63%);
+  --data-extraction: hsl(20 96% 62%);
+  --file-converters: hsl(196 62% 67%);
+  --productivity: hsl(330 100% 64%);
 
-  --sidebar: oklch(0.16 0.015 240); /* Slightly deeper shade for sidebar to provide depth */
-  --sidebar-foreground: oklch(0.9 0.005 240);
-  --sidebar-primary: oklch(0.8 0.1 220);
-  --sidebar-primary-foreground: oklch(0.15 0.015 240);
-  --sidebar-accent: oklch(0.23 0.015 240);
-  --sidebar-accent-foreground: oklch(0.92 0.005 240);
-  --sidebar-border: oklch(0.24 0.015 240);
-  --sidebar-ring: oklch(0.7 0.1 220);
-}
-
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-
-  /* Category colors */
-  --color-job-application: var(--job-application);
-  --color-social-media: var(--social-media);
-  --color-data-extraction: var(--data-extraction);
-  --color-file-converters: var(--file-converters);
-  --color-productivity: var(--productivity);
-
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  --sidebar: 220 24% 14%;
+  --sidebar-foreground: 210 40% 90%;
+  --sidebar-primary: 210 85% 72%;
+  --sidebar-primary-foreground: 222 47% 11%;
+  --sidebar-accent: 220 18% 22%;
+  --sidebar-accent-foreground: 210 40% 92%;
+  --sidebar-border: 220 16% 26%;
+  --sidebar-ring: 210 85% 72%;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

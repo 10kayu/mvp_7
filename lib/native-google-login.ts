@@ -1,35 +1,23 @@
 "use client"
 
+import { hasNativeGoogleSignInBridge, signInWithGoogle } from "@/lib/google-signin-bridge"
 import { getSupabaseClient } from "@/lib/supabase"
 
-declare global {
-  interface Window {
-    JSBridge?: {
-      postMessage?: (message: string) => void
-    }
-    median?: {
-      nativebridge?: {
-        custom?: (params: { callback?: string; [key: string]: unknown }) => void
-      }
-    }
-  }
-}
-
-const EVENT_NAME = "native_google_login_result"
 const DEFAULT_TIMEOUT_MS = 60_000
+type NativeGoogleLoginFailureReason =
+  | "cancelled"
+  | "timeout"
+  | "bridge_unavailable"
+  | "not_android_webview"
+  | "native_error"
+type NativeGoogleLoginResult =
+  | { success: true; user: any }
+  | { success: false; reason: NativeGoogleLoginFailureReason; error?: string }
 
 function isAndroidWebView(): boolean {
   if (typeof window === "undefined") return false
   const ua = window.navigator.userAgent || ""
   return /Android/i.test(ua) && /; wv\)|Version\/\d+\.\d+.*Chrome\//i.test(ua)
-}
-
-function isBridgeAvailable(): boolean {
-  if (typeof window === "undefined") return false
-  return (
-    typeof window.JSBridge?.postMessage === "function" ||
-    typeof window.median?.nativebridge?.custom === "function"
-  )
 }
 
 async function loadNativeGoogleWebClientId(): Promise<string> {
@@ -46,55 +34,6 @@ async function loadNativeGoogleWebClientId(): Promise<string> {
   } catch {
     return ""
   }
-}
-
-function sendBridgeCommand(webClientId?: string): void {
-  const resolvedClientId = String(webClientId || "").trim()
-  const encodedClientId = encodeURIComponent(resolvedClientId)
-  const uriCommand = `median://native-google-login/start?webClientId=${encodedClientId}`
-
-  const postMessagePayload = JSON.stringify({
-    medianCommand: uriCommand,
-    command: "native-google-login/start",
-    webClientId: resolvedClientId,
-    data: {
-      webClientId: resolvedClientId,
-    },
-  })
-
-  const customPayload = {
-    command: "native-google-login/start",
-    medianCommand: uriCommand,
-    webClientId: resolvedClientId,
-    data: {
-      webClientId: resolvedClientId,
-    },
-  }
-
-  if (typeof window.median?.nativebridge?.custom === "function") {
-    window.median.nativebridge.custom(customPayload)
-    return
-  }
-
-  if (typeof window.JSBridge?.postMessage === "function") {
-    window.JSBridge.postMessage(postMessagePayload)
-    return
-  }
-
-  const jsonCommand = JSON.stringify({
-    medianCommand: uriCommand,
-    webClientId: resolvedClientId,
-    data: {
-      webClientId: resolvedClientId,
-    },
-  })
-
-  if (typeof window.JSBridge?.postMessage === "function") {
-    window.JSBridge.postMessage(jsonCommand)
-    return
-  }
-
-  throw new Error("Native bridge is not available")
 }
 
 async function signInSupabaseWithGoogleIdToken(idToken: string) {
@@ -114,91 +53,59 @@ async function signInSupabaseWithGoogleIdToken(idToken: string) {
   return data.user
 }
 
+function mapNativeErrorReason(errorText: string): "cancelled" | "timeout" | "native_error" {
+  if (/cancel/i.test(errorText)) {
+    return "cancelled"
+  }
+  if (/timeout/i.test(errorText)) {
+    return "timeout"
+  }
+  return "native_error"
+}
+
+async function signInViaGoogleJavascriptInterface(input: { webClientId: string; timeoutMs: number }): Promise<NativeGoogleLoginResult> {
+  try {
+    const bridgeResult = await signInWithGoogle(input.webClientId, input.timeoutMs)
+
+    if (!bridgeResult.success) {
+      const errorText = String(bridgeResult.error || "")
+      return {
+        success: false,
+        reason: mapNativeErrorReason(errorText),
+        error: errorText || "Native Google login failed",
+      }
+    }
+
+    const idToken = String(bridgeResult.idToken || "")
+    if (!idToken) {
+      return { success: false, reason: "native_error", error: "Native Google idToken is missing" }
+    }
+
+    const user = await signInSupabaseWithGoogleIdToken(idToken)
+    return { success: true, user }
+  } catch (error: unknown) {
+    const errorText = error instanceof Error ? error.message : String(error || "")
+    const reason = mapNativeErrorReason(errorText)
+    return {
+      success: false,
+      reason,
+      error:
+        errorText ||
+        (reason === "timeout" ? "Native Google login timeout" : "Native Google login failed"),
+    }
+  }
+}
+
 export async function signInWithNativeGoogleBridge(input?: { timeoutMs?: number }) {
   const timeoutMs = input?.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  if (!isAndroidWebView()) {
+    return { success: false as const, reason: "not_android_webview" as const }
+  }
 
-  if (!isBridgeAvailable()) {
-    if (!isAndroidWebView()) {
-      return { success: false as const, reason: "not_android_webview" as const }
-    }
+  if (!hasNativeGoogleSignInBridge()) {
     return { success: false as const, reason: "bridge_unavailable" as const }
   }
 
-  return new Promise<
-    | { success: true; user: any }
-    | { success: false; reason: "cancelled" | "timeout" | "bridge_unavailable" | "not_android_webview" | "native_error"; error?: string }
-  >((resolve) => {
-    let settled = false
-    let timer: ReturnType<typeof setTimeout> | null = null
-
-    const cleanup = () => {
-      window.removeEventListener(EVENT_NAME, onResult as EventListener)
-      if (timer) clearTimeout(timer)
-    }
-
-    const finish = (
-      payload:
-        | { success: true; user: any }
-        | { success: false; reason: "cancelled" | "timeout" | "bridge_unavailable" | "not_android_webview" | "native_error"; error?: string }
-    ) => {
-      if (settled) return
-      settled = true
-      cleanup()
-      resolve(payload)
-    }
-
-    const onResult = async (event: Event) => {
-      const customEvent = event as CustomEvent
-      const detail = customEvent?.detail || {}
-      const success = Boolean(detail?.success)
-
-      if (!success) {
-        const errorText = String(detail?.error || "")
-        if (/cancel/i.test(errorText)) {
-          finish({ success: false, reason: "cancelled", error: errorText })
-          return
-        }
-
-        finish({ success: false, reason: "native_error", error: errorText || "Native Google login failed" })
-        return
-      }
-
-      const idToken = String(detail?.idToken || "")
-      if (!idToken) {
-        finish({ success: false, reason: "native_error", error: "Native Google idToken is missing" })
-        return
-      }
-
-      try {
-        const user = await signInSupabaseWithGoogleIdToken(idToken)
-        finish({ success: true, user })
-      } catch (error: any) {
-        finish({
-          success: false,
-          reason: "native_error",
-          error: error?.message || "Failed to exchange native Google token",
-        })
-      }
-    }
-
-    window.addEventListener(EVENT_NAME, onResult as EventListener)
-
-    timer = setTimeout(() => {
-      finish({ success: false, reason: "timeout", error: "Native Google login timeout" })
-    }, timeoutMs)
-
-    ;(async () => {
-      const webClientId = await loadNativeGoogleWebClientId()
-
-      try {
-        sendBridgeCommand(webClientId)
-      } catch (error: any) {
-        finish({
-          success: false,
-          reason: "bridge_unavailable",
-          error: error?.message || "Native bridge is unavailable",
-        })
-      }
-    })()
-  })
+  const webClientId = await loadNativeGoogleWebClientId()
+  return signInViaGoogleJavascriptInterface({ webClientId, timeoutMs })
 }

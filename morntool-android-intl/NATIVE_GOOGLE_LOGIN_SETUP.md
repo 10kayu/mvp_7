@@ -49,7 +49,7 @@ This value maps to `BuildConfig.NATIVE_GOOGLE_WEB_CLIENT_ID`.
 
 Ensure `google-services.json` includes your package:
 
-- `com.mornclient.android.global`
+- `com.morntool.android.global`
 
 Current build already validates package matching and fails fast if mismatched.
 

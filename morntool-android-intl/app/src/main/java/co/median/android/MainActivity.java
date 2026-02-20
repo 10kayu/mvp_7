@@ -148,6 +148,7 @@ public class MainActivity extends AppCompatActivity implements Observer,
     private TabManager tabManager;
     private ActionManager actionManager;
     private SideNavManager sideNavManager;
+    public GoogleSignInHelper googleSignInHelper;
     private boolean isRoot;
     private boolean webviewIsHidden = false;
     private Handler handler = new Handler();
@@ -451,6 +452,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
         }
 
         setupWebviewTheme(appTheme);
+
+        // Register Google Sign-In JavaScript bridge for window.GoogleSignIn(...)
+        if (mWebview != null) {
+            ((WebView) mWebview).addJavascriptInterface(new GoogleSignInBridge(this), "GoogleSignIn");
+        }
 
         boolean isWebViewStateRestored = false;
         if (savedInstanceState != null) {
@@ -1051,6 +1057,11 @@ public class MainActivity extends AppCompatActivity implements Observer,
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (googleSignInHelper != null) {
+            googleSignInHelper.handleActivityResult(requestCode, resultCode, data);
+        }
+
         getGNApplication().mBridge.onActivityResult(this, requestCode, resultCode, data);
 
         if (data != null && data.getBooleanExtra("exit", false))

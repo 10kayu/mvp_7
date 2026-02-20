@@ -4,9 +4,10 @@ import React, { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { useLanguage } from "@/components/language-provider";
 import { useTranslations } from "@/lib/i18n";
+import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -282,13 +283,13 @@ export function Header({
                     {language === 'zh' ? '购买积分' : 'Buy Credits'}
                   </Button>
 
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 hover:bg-muted rounded-lg border border-border/50 transition-all group cursor-default">
-                    <div className="flex items-center justify-center w-5 h-5 bg-amber-500/10 rounded-full">
-                      <Coins className="w-3.5 h-3.5 text-amber-500" />
+                  <div className="flex items-center gap-2.5 px-3 py-1.5 bg-muted/50 hover:bg-muted rounded-lg border border-border/50 transition-all group cursor-default">
+                    <div className="flex items-center justify-center w-6 h-6 bg-amber-500/10 rounded-full shrink-0">
+                      <Coins className="w-4 h-4 text-amber-500" />
                     </div>
-                    <div className="flex flex-col -space-y-0.5">
-                      <span className="text-xs font-bold tabular-nums">{user?.credits}</span>
-                      <span className="text-[9px] text-muted-foreground uppercase font-medium tracking-tight">{ui.credits}</span>
+                    <div className="flex flex-col leading-none">
+                      <span className="text-sm font-bold tabular-nums text-foreground">{user?.credits ?? 0}</span>
+                      <span className="text-[10px] text-muted-foreground font-medium">{ui.credits}</span>
                     </div>
                   </div>
 
@@ -412,30 +413,50 @@ export function Header({
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{language === 'zh' ? '每日签到' : 'Daily Check-in'}</DialogTitle>
-              <DialogDescription>
-                {language === 'zh' ? `每天可领取 ${dailyCredits} 积分` : `Claim ${dailyCredits} credits once per day`}
+              <DialogDescription className="flex items-center gap-1.5">
+                {language === 'zh' ? '打卡领取奖励' : 'Check in to earn rewards'}
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 font-bold text-xs uppercase transition-colors">
+                  <Coins className="w-3 h-3" />
+                  +{dailyCredits}
+                </span>
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
-              <div className="rounded-md border p-2 flex justify-center">
+              <div className="rounded-md border p-2 flex justify-center bg-card shadow-sm">
                 <Calendar
                   mode="single"
                   modifiers={{ checked: checkedDateObjects }}
+                  className="p-0 pointer-events-none"
+                  classNames={{
+                    day_button: cn(
+                      buttonVariants({ variant: "ghost" }),
+                      "h-8 w-8 p-0 font-normal aria-selected:opacity-100"
+                    ),
+                  }}
                   modifiersClassNames={{
                     checked:
-                      'text-white [&>button]:bg-green-500 [&>button]:text-white [&>button]:rounded-full',
+                      'bg-green-500! text-white! rounded-full',
                   }}
                 />
               </div>
 
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{language === 'zh' ? '已打卡天数' : 'Checked days'}</span>
-                <span className="font-medium text-foreground">{checkinDates.length}</span>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-muted-foreground">{language === 'zh' ? '累计签到' : 'Total Days'}</span>
+                  <span className="text-lg font-bold tabular-nums text-foreground">{checkinDates.length} <span className="text-xs font-normal text-muted-foreground">{language === 'zh' ? '天' : 'days'}</span></span>
+                </div>
+                <div className="flex flex-col gap-0.5 items-end">
+                  <span className="text-xs text-muted-foreground">{language === 'zh' ? '当前积分' : 'Current Credits'}</span>
+                  <div className="flex items-center gap-1.5">
+                    <Coins className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="text-lg font-bold tabular-nums text-foreground">{user?.credits || 0}</span>
+                  </div>
+                </div>
               </div>
 
               <Button
-                className="w-full"
+                className="w-full h-11 text-base font-semibold transition-all shadow-md shadow-primary/10 active:scale-[0.98]"
                 onClick={handleDailyCheckin}
                 disabled={checkinLoading || checkinSubmitting || todayCheckedIn}
               >
@@ -445,7 +466,7 @@ export function Header({
                   ? (language === 'zh' ? '签到中...' : 'Checking in...')
                   : todayCheckedIn
                   ? (language === 'zh' ? '今日已签到' : 'Already checked in today')
-                  : (language === 'zh' ? `领取 ${dailyCredits} 积分` : `Claim ${dailyCredits} credits`)}
+                  : (language === 'zh' ? `立即领取 ${dailyCredits} 积分` : `Claim ${dailyCredits} credits`)}
               </Button>
             </div>
           </DialogContent>

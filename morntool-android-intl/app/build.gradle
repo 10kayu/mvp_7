@@ -151,7 +151,7 @@ android {
         compileSdk 36
         minSdkVersion 23
         targetSdkVersion 36
-        applicationId "com.mornclient.android.global"
+        applicationId "com.morntool.android.global"
         versionCode 5
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
