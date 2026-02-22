@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { grantReferralFirstUseReward } from "@/lib/market/referrals"
 
 export const runtime = "nodejs"
 
@@ -23,6 +24,7 @@ function sanitizeEcc(input: string | null): "L" | "M" | "Q" | "H" {
 
 export async function GET(request: Request) {
   try {
+    const requestUserId = String(request.headers.get("x-user-id") || "").trim()
     const { searchParams } = new URL(request.url)
     const data = String(searchParams.get("data") || "").trim()
 
@@ -49,6 +51,14 @@ export async function GET(request: Request) {
         if (!contentType.startsWith("image/")) continue
 
         const bytes = await response.arrayBuffer()
+
+        if (requestUserId) {
+          await grantReferralFirstUseReward({
+            invitedUserId: requestUserId,
+            toolId: "qr-generator",
+          }).catch(() => null)
+        }
+
         return new Response(bytes, {
           status: 200,
           headers: {

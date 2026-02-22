@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { listStoredFiles, saveDirectFile } from "@/lib/tools/storage"
+import { grantReferralFirstUseReward } from "@/lib/market/referrals"
 
 export const runtime = "nodejs"
 
@@ -17,6 +18,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const requestUserId = String(request.headers.get("x-user-id") || "").trim()
     const formData = await request.formData()
     const file = formData.get("file")
 
@@ -34,6 +36,13 @@ export async function POST(request: Request) {
       data,
     })
 
+    if (requestUserId) {
+      await grantReferralFirstUseReward({
+        invitedUserId: requestUserId,
+        toolId: "cloud-drive",
+      }).catch(() => null)
+    }
+
     return NextResponse.json({ success: true, file: saved })
   } catch (error: any) {
     return NextResponse.json(
@@ -42,4 +51,3 @@ export async function POST(request: Request) {
     )
   }
 }
-

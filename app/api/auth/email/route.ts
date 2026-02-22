@@ -6,6 +6,7 @@ import { getDatabase } from '@/lib/database/cloudbase-service'
 import { DEPLOYMENT_REGION } from '@/lib/config/deployment.config'
 import { FREE_USER_INITIAL_CREDITS } from '@/lib/credits/pricing'
 import { verifyChinaEmailVerificationCode } from '@/lib/auth/china-email-code'
+import { bindReferralFromRequest } from "@/lib/market/referrals"
 // 服务器端Supabase客户端（无需localStorage）
 
 function createServerClient() {
@@ -361,6 +362,17 @@ export async function POST(request: NextRequest) {
                 { error: result.error },
                 { status: 400 }
             )
+        }
+
+        const invitedUserId = String(result?.user?.id || "").trim()
+        if (invitedUserId) {
+            await bindReferralFromRequest({
+                request,
+                invitedUserId,
+                invitedEmail: String(result?.user?.email || email || "").trim().toLowerCase(),
+            }).catch((error) => {
+                console.error("[referral] bind in email auth failed:", error)
+            })
         }
 
         return NextResponse.json({

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import * as jwt from "jsonwebtoken"
 import { getDatabase } from "@/lib/database/cloudbase-service"
 import { resolveDeploymentRegion } from "@/lib/config/deployment-region"
+import { bindReferralFromRequest } from "@/lib/market/referrals"
 
 export const runtime = "nodejs"
 
@@ -117,6 +118,17 @@ export async function POST(req: NextRequest) {
       credits: Number.isFinite(user?.credits) ? Number(user?.credits) : 0,
       subscription_tier: user?.subscription_tier || (user?.pro ? "pro" : "free"),
     })
+
+    const invitedUserId = String((safeUser as any)?.id || "").trim()
+    if (invitedUserId) {
+      await bindReferralFromRequest({
+        request: req,
+        invitedUserId,
+        invitedEmail: String((safeUser as any)?.email || "").trim().toLowerCase(),
+      }).catch((error) => {
+        console.error("[referral] bind in mp-callback failed:", error)
+      })
+    }
 
     const response = NextResponse.json({ success: true, openid, user: safeUser })
 

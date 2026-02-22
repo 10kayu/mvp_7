@@ -2,6 +2,7 @@ package co.median.android;
 
 import android.Manifest;
 import android.content.ContentResolver;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -38,6 +39,7 @@ public class FileWriterSharer {
     private static final String TAG = FileWriterSharer.class.getSimpleName();
     private static final long MAX_SIZE = 1024 * 1024 * 1024; // 1 gigabyte
     private static final String BASE64TAG = ";base64,";
+    private static final String SHARE_POSTER_FILENAME_PREFIX = "__median_share_poster__";
     private final FileDownloader.DownloadLocation defaultDownloadLocation;
     private String callback;
 
@@ -53,6 +55,7 @@ public class FileWriterSharer {
         public long bytesWritten;
         public String callback;
         public boolean open;
+        public boolean shareOnComplete;
     }
 
     private class JavascriptBridge {
@@ -146,6 +149,11 @@ public class FileWriterSharer {
 
 
         if (!TextUtils.isEmpty(fileInfo.name)) {
+            if (fileInfo.name.startsWith(SHARE_POSTER_FILENAME_PREFIX)) {
+                fileInfo.shareOnComplete = true;
+                fileInfo.name = fileInfo.name.substring(SHARE_POSTER_FILENAME_PREFIX.length());
+            }
+
             fileInfo.extension = FileDownloader.getFilenameExtension(fileInfo.name);
             if (!TextUtils.isEmpty(fileInfo.extension)) {
                 if (Objects.equals(fileInfo.extension, fileInfo.name)) {
@@ -298,7 +306,11 @@ public class FileWriterSharer {
                 }
                 if (fileInfo.savedUri == null) return;
 
-                FileDownloader.viewFile(context, fileInfo.savedUri, fileInfo.mimetype, (defaultDownloadLocation == FileDownloader.DownloadLocation.PRIVATE_INTERNAL));
+                if (fileInfo.shareOnComplete) {
+                    shareFile(context, fileInfo.savedUri, fileInfo.mimetype);
+                } else {
+                    FileDownloader.viewFile(context, fileInfo.savedUri, fileInfo.mimetype, (defaultDownloadLocation == FileDownloader.DownloadLocation.PRIVATE_INTERNAL));
+                }
             });
         } else {
             String downloadCompleteMessage = fileInfo.name != null && !fileInfo.name.isEmpty()
@@ -308,5 +320,18 @@ public class FileWriterSharer {
         }
 
         FileDownloader.runSuccessCallback(context, fileInfo.callback);
+    }
+
+    private void shareFile(MainActivity activity, Uri uri, String mimeType) {
+        try {
+            Intent share = new Intent(Intent.ACTION_SEND);
+            share.setType(TextUtils.isEmpty(mimeType) ? "image/*" : mimeType);
+            share.putExtra(Intent.EXTRA_STREAM, uri);
+            share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            share.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            activity.startActivity(Intent.createChooser(share, activity.getString(R.string.action_share)));
+        } catch (Exception e) {
+            GNLog.getInstance().logError(TAG, "Failed to share file", e);
+        }
     }
 }

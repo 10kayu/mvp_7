@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Cloud, Copy, Download, RefreshCw, Trash2, Upload } from "lucide-react"
 import { toast } from "sonner"
+import { useUser } from "@/hooks/use-user"
 
 interface StoredFile {
   id: string
@@ -28,6 +29,7 @@ function toHumanSize(bytes: number) {
 
 export function CloudDrive() {
   const { language } = useLanguage()
+  const { user } = useUser()
   const [files, setFiles] = useState<StoredFile[]>([])
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -70,6 +72,7 @@ export function CloudDrive() {
       formData.set("file", file)
       const response = await fetch("/api/tools/storage/files", {
         method: "POST",
+        headers: user?.id ? { "x-user-id": String(user.id) } : undefined,
         body: formData,
       })
       const result = await response.json()

@@ -4,6 +4,7 @@ import type React from "react"
 import { useState } from "react"
 import { useLanguage } from "@/components/language-provider";
 import { useTranslations } from '@/lib/i18n'
+import { useUser } from "@/hooks/use-user"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -48,6 +49,7 @@ const MAX_TOTAL_ATTACHMENT_SIZE = 20 * 1024 * 1024
 export function EmailMultiSender() {
   const { language } = useLanguage();
   const t  = useTranslations(language)
+  const { user } = useUser()
 
   const formatWithCount = (template: string | undefined, count: number) =>
     (template || "{count}").replace("{count}", String(count))
@@ -573,6 +575,7 @@ Best regards,
 
          const response = await fetch('/api/tools/email-sender', {
            method: 'POST',
+           headers: user?.id ? { "x-user-id": String(user.id) } : undefined,
            body: formData,
          })
 

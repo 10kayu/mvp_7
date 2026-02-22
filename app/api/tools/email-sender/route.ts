@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
+import { grantReferralFirstUseReward } from "@/lib/market/referrals"
 
 const MAX_ATTACHMENT_COUNT = 5
 const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024
@@ -115,6 +116,7 @@ async function parsePayload(req: Request): Promise<ParsedPayload> {
 export async function POST(req: Request) {
   try {
     const { smtpConfig, mailOptions, attachments } = await parsePayload(req)
+    const requestUserId = String(req.headers.get("x-user-id") || "").trim()
 
     if (!smtpConfig || !mailOptions) {
       return NextResponse.json(
@@ -151,6 +153,13 @@ export async function POST(req: Request) {
     }
 
     console.log('Message sent: %s', info.messageId)
+
+    if (requestUserId) {
+      await grantReferralFirstUseReward({
+        invitedUserId: requestUserId,
+        toolId: "email-multi-sender",
+      }).catch(() => null)
+    }
 
     return NextResponse.json({ success: true, messageId: info.messageId, usedPort: primaryPort })
   } catch (error: any) {

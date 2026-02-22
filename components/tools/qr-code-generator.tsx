@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { QrCode, Download, Copy, Wifi, User, Link, MessageSquare, Palette } from "lucide-react"
 import { toast } from "sonner"
 import { useLanguage } from "@/components/language-provider"
+import { useUser } from "@/hooks/use-user"
 
 interface QRCodeData {
   type: "url" | "text" | "wifi" | "contact" | "sms"
@@ -28,6 +29,7 @@ function normalizeHexColor(color: string, fallback: string) {
 
 export function QrCodeGenerator() {
   const { language } = useLanguage()
+  const { user } = useUser()
   const zh = language === "zh"
 
   const [qrData, setQrData] = useState<QRCodeData>({
@@ -101,7 +103,10 @@ export function QrCodeGenerator() {
       const light = normalizeHexColor(qrData.backgroundColor, "ffffff")
 
       const endpoint = `/api/tools/qr?size=${qrData.size}&ecc=${qrData.errorCorrection}&dark=${dark}&light=${light}&data=${encodeURIComponent(qrContent)}`
-      const response = await fetch(endpoint, { cache: "no-store" })
+      const response = await fetch(endpoint, {
+        cache: "no-store",
+        headers: user?.id ? { "x-user-id": String(user.id) } : undefined,
+      })
       if (!response.ok) {
         const fallbackText = tx("二维码生成失败，请检查网络后重试", "Unable to generate QR image. Please check network and retry.")
         try {

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react"
+import React, { useCallback, useEffect, useRef, useState } from "react"
 import { useLanguage } from "@/components/language-provider";
 import { useTranslations } from "@/lib/i18n";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -44,6 +44,21 @@ export function Dashboard() {
   const [showMobileSearch, setShowMobileSearch] = useState(false)
   const [authErrorMessage, setAuthErrorMessage] = useState<string | null>(null)
   const [isInMiniProgram, setIsInMiniProgram] = useState(false)
+
+  const readPostLoginRedirect = useCallback(() => {
+    if (typeof window === "undefined") return null
+    const raw = String(sessionStorage.getItem("post_login_redirect") || "").trim()
+    if (!raw.startsWith("/") || raw.startsWith("//")) return null
+    return raw
+  }, [])
+
+  const consumePostLoginRedirect = useCallback(() => {
+    const redirectPath = readPostLoginRedirect()
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("post_login_redirect")
+    }
+    return redirectPath
+  }, [readPostLoginRedirect])
 
   useEffect(() => {
     updateUserRef.current = updateUser
@@ -304,6 +319,13 @@ export function Dashboard() {
 
         localStorage.setItem("user", JSON.stringify(profileUser))
         updateUser(profileUser)
+
+        const redirectPath = consumePostLoginRedirect()
+        if (redirectPath && typeof window !== "undefined") {
+          window.location.href = redirectPath
+          return { success: true, user: profileUser }
+        }
+
         return { success: true, user: profileUser }
       } catch (error: any) {
         console.error('login error:' + error?.message)
@@ -325,6 +347,13 @@ export function Dashboard() {
       localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.setItem("app-auth-state", JSON.stringify(data));
       updateUser(data.user);
+
+      const redirectPath = consumePostLoginRedirect()
+      if (redirectPath && typeof window !== "undefined") {
+        window.location.href = redirectPath
+        return { success: true, user: data.user }
+      }
+
       return { success: true, user: data.user };
     } catch (error: any) {
       console.error('login error:' + error?.message)
@@ -360,10 +389,12 @@ export function Dashboard() {
     }
 
     try {
+      const nextPath = readPostLoginRedirect()
+      const redirectUrl = nextPath ? `${window.location.origin}${nextPath}` : window.location.href
       const response = await fetch('/api/auth/wechat/callback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ redirectUrl: window.location.href })
+        body: JSON.stringify({ redirectUrl })
       })
 
       const data = await response.json()
@@ -393,6 +424,13 @@ export function Dashboard() {
       updateUser(profileUser)
       setShowLoginModal(false)
       setShowRegisterModal(false)
+
+      const redirectPath = consumePostLoginRedirect()
+      if (redirectPath && typeof window !== "undefined") {
+        window.location.href = redirectPath
+        return { success: true }
+      }
+
       return { success: true }
     }
 
@@ -412,9 +450,12 @@ export function Dashboard() {
     }
 
     try {
+      const nextPath = readPostLoginRedirect() || "/"
       const { data, error } = await getSupabaseClient().auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+        },
       });
 
       if (error) {

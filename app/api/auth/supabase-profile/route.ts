@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { FREE_USER_INITIAL_CREDITS } from "@/lib/credits/pricing"
+import { bindReferralFromRequest } from "@/lib/market/referrals"
 
 let supabaseInstance: any = null
 
@@ -54,6 +55,14 @@ export async function POST(req: NextRequest) {
       if (fullName && !existing.full_name) patch.full_name = fullName
       if (avatarUrl && !existing.avatar_url) patch.avatar_url = avatarUrl
 
+      await bindReferralFromRequest({
+        request: req,
+        invitedUserId: userId,
+        invitedEmail: email,
+      }).catch((error) => {
+        console.error("[referral] bind in supabase-profile(existing) failed:", error)
+      })
+
       if (Object.keys(patch).length > 0) {
         const { data: updated, error: updateError } = await supabase
           .from("user")
@@ -89,6 +98,14 @@ export async function POST(req: NextRequest) {
       console.error("Create user profile failed:", insertError)
       return NextResponse.json({ error: "Failed to create user" }, { status: 500 })
     }
+
+    await bindReferralFromRequest({
+      request: req,
+      invitedUserId: userId,
+      invitedEmail: email,
+    }).catch((error) => {
+      console.error("[referral] bind in supabase-profile(insert) failed:", error)
+    })
 
     return NextResponse.json({ success: true, user: inserted || newProfile })
   } catch (error) {

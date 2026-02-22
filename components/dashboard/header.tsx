@@ -21,7 +21,7 @@ import {
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu"
 import { getSupabaseClient } from "@/lib/supabase"
-import { Search, Zap, User, Menu, Sparkles, Settings2, Globe, Moon, Sun, Check, Coins, Download, Shield, CalendarDays } from "lucide-react"
+import { Search, Zap, User, Menu, Sparkles, Settings2, Globe, Moon, Sun, Check, Coins, Download, Shield, CalendarDays, TrendingUp } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Calendar } from "@/components/ui/calendar"
@@ -302,6 +302,7 @@ export function Header({
                   >
                     <Download className="w-5 h-5 text-muted-foreground" />
                   </Button>
+
                 </>
               )}
 
@@ -388,6 +389,16 @@ export function Header({
                       <Coins className="mr-2 h-4 w-4" />
                       {language === 'zh' ? '购买积分' : 'Buy Credits'}
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/invite')}>
+                      <TrendingUp className="mr-2 h-4 w-4" />
+                      {language === 'zh' ? '邀请中心' : 'Invite Center'}
+                    </DropdownMenuItem>
+                    {isAdmin ? (
+                      <DropdownMenuItem onClick={() => router.push('/market')}>
+                        <Shield className="mr-2 h-4 w-4" />
+                        {language === 'zh' ? '裂变后台' : 'Market Admin'}
+                      </DropdownMenuItem>
+                    ) : null}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
                       {ui.logout}

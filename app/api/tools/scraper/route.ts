@@ -1,12 +1,14 @@
 
 import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
+import { grantReferralFirstUseReward } from "@/lib/market/referrals"
 
 // 设置超时时间
 export const maxDuration = 60; // 60秒 (Vercel 等平台限制)
 
 export async function POST(req: Request) {
   try {
+    const requestUserId = String(req.headers.get("x-user-id") || "").trim()
     const body = await req.json();
     const { url, dataTypes } = body;
 
@@ -159,6 +161,13 @@ export async function POST(req: Request) {
 
     // Limit results to avoid backend overload logic (optional)
     const limitedResults = results.slice(0, 200);
+
+    if (requestUserId) {
+      await grantReferralFirstUseReward({
+        invitedUserId: requestUserId,
+        toolId: "data-scraper",
+      }).catch(() => null)
+    }
 
     return NextResponse.json({ success: true, count: limitedResults.length, data: limitedResults });
 

@@ -5,8 +5,10 @@ import Link from "next/link"
 import { ThemeSwitch } from "@/components/theme-switch"
 import { getTranslations } from '@/lib/i18n'
 import { AdBanner } from "@/components/dashboard/ad-banner"
+import { InviteShareButton } from "@/components/market/invite-share-button"
 
 interface ToolLayoutProps {
+  toolId: string
   title: string
   description: string
   category: string
@@ -15,7 +17,7 @@ interface ToolLayoutProps {
   children: React.ReactNode
 }
 
-export function ToolLayout({ title, description, category, language, creditCost, children }: ToolLayoutProps) {
+export function ToolLayout({ toolId, title, description, category, language, creditCost, children }: ToolLayoutProps) {
   const t = getTranslations(language)
 
   const getCategoryColor = (cat: string) => {
@@ -80,6 +82,7 @@ export function ToolLayout({ title, description, category, language, creditCost,
                 </div>
               </div>
               <div className="flex items-center gap-1 md:gap-2 shrink-0">
+                <InviteShareButton toolId={toolId} toolTitle={title} />
                 <ThemeSwitch/>
                 <Link href="/">
                   <Button variant="outline" size="sm" className="gap-2 bg-transparent h-9 px-2 md:px-3">

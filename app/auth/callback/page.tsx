@@ -19,6 +19,8 @@ export default function AuthCallback() {
 
                 const currentUrl = new URL(window.location.href)
                 const code = currentUrl.searchParams.get('code')
+                const nextPathRaw = currentUrl.searchParams.get('next') || ""
+                const nextPath = nextPathRaw.startsWith('/') && !nextPathRaw.startsWith('//') ? nextPathRaw : ""
 
                 if (code) {
                     const { error: exchangeError } = await getSupabaseClient().auth.exchangeCodeForSession(code)
@@ -72,9 +74,12 @@ export default function AuthCallback() {
                     }
 
                     // Successful authentication
-                    console.log('✅ [Callback] Authentication successful, redirecting to home...')
+                    console.log('✅ [Callback] Authentication successful, redirecting...')
+                    const fallbackPath = String(sessionStorage.getItem('post_login_redirect') || "").trim()
+                    const finalPath = nextPath || (fallbackPath.startsWith("/") && !fallbackPath.startsWith("//") ? fallbackPath : "/")
+                    sessionStorage.removeItem("post_login_redirect")
                     // 使用 replace 而不是 push，避免返回按钮回到 callback 页面
-                    router.replace('/')
+                    router.replace(finalPath)
                 } else {
                     // No session found
                     console.log('⚠️ [Callback] No session found')

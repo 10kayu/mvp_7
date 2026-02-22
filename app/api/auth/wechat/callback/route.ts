@@ -1,11 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDatabase } from '@/lib/database/cloudbase-service'
 import * as jwt from 'jsonwebtoken'
+import { bindReferralFromRequest } from "@/lib/market/referrals"
 
 function getWechatLoginConfig() {
     const appId = (process.env.WECHAT_APP_ID_weblogin || '').trim()
     const appSecret = (process.env.WECHAT_APP_SECRET_weblogin || '').trim()
     return { appId, appSecret }
+}
+
+function getSiteUrl(request: NextRequest) {
+    return (process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin || "http://localhost:3000").trim()
+}
+
+function normalizeRedirectPath(rawValue: unknown): string {
+    const raw = String(rawValue || "").trim()
+    if (!raw) return "/"
+
+    if (raw.startsWith("/") && !raw.startsWith("//")) {
+        return raw
+    }
+
+    try {
+        const parsed = new URL(raw)
+        return `${parsed.pathname}${parsed.search || ""}`
+    } catch {
+        return "/"
+    }
+}
+
+function encodeState(nextPath: string) {
+    const payload = {
+        next: normalizeRedirectPath(nextPath),
+        nonce: Math.random().toString(36).slice(2, 10),
+    }
+    return Buffer.from(JSON.stringify(payload)).toString("base64url")
+}
+
+function decodeStateToNextPath(state?: string | null): string {
+    if (!state) return "/"
+    try {
+        const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf8"))
+        return normalizeRedirectPath(decoded?.next)
+    } catch {
+        return "/"
+    }
 }
 
 /**
@@ -14,22 +53,24 @@ function getWechatLoginConfig() {
  */
 export async function GET(req: NextRequest) {
     try {
+        const siteUrl = getSiteUrl(req)
         const { appId, appSecret } = getWechatLoginConfig()
+        const nextPath = decodeStateToNextPath(req.nextUrl.searchParams.get("state"))
 
         if (!appId || !appSecret) {
             console.log('⚠️ [WeChat] 微信登录未配置，重定向到首页')
-            return NextResponse.redirect(
-                `${process.env.NEXT_PUBLIC_SITE_URL}/?error=wechat_not_configured`
-            )
+            const target = new URL(nextPath || "/", siteUrl)
+            target.searchParams.set("error", "wechat_not_configured")
+            return NextResponse.redirect(target)
         }
 
         const searchParams = req.nextUrl.searchParams
         const code = searchParams.get('code')
 
         if (!code) {
-            return NextResponse.redirect(
-                `${process.env.NEXT_PUBLIC_SITE_URL}/?error=wechat_auth_failed`
-            )
+            const target = new URL(nextPath || "/", siteUrl)
+            target.searchParams.set("error", "wechat_auth_failed")
+            return NextResponse.redirect(target)
         }
 
         const tokenResponse = await fetch(
@@ -44,9 +85,9 @@ export async function GET(req: NextRequest) {
 
         if (tokenData.errcode) {
             console.error('❌ 获取微信access_token失败:', tokenData)
-            return NextResponse.redirect(
-                `${process.env.NEXT_PUBLIC_SITE_URL}/?error=wechat_token_failed`
-            )
+            const target = new URL(nextPath || "/", siteUrl)
+            target.searchParams.set("error", "wechat_token_failed")
+            return NextResponse.redirect(target)
         }
 
         const { access_token, openid } = tokenData
@@ -62,9 +103,9 @@ export async function GET(req: NextRequest) {
 
         if (userInfo.errcode) {
             console.error('❌ 获取微信用户信息失败:', userInfo)
-            return NextResponse.redirect(
-                `${process.env.NEXT_PUBLIC_SITE_URL}/?error=wechat_userinfo_failed`
-            )
+            const target = new URL(nextPath || "/", siteUrl)
+            target.searchParams.set("error", "wechat_userinfo_failed")
+            return NextResponse.redirect(target)
         }
 
         try {
@@ -130,7 +171,15 @@ export async function GET(req: NextRequest) {
                 { expiresIn }
             )
 
-            const redirectUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL!)
+            await bindReferralFromRequest({
+                request: req,
+                invitedUserId: userId,
+                invitedEmail: String(existingUser?.data?.[0]?.email || "").trim().toLowerCase(),
+            }).catch((error) => {
+                console.error("[referral] bind in wechat callback failed:", error)
+            })
+
+            const redirectUrl = new URL(nextPath || "/", siteUrl)
             redirectUrl.searchParams.set('wechat_login', 'success')
             redirectUrl.searchParams.set('token', token)
             redirectUrl.searchParams.set('user', encodeURIComponent(JSON.stringify({
@@ -146,15 +195,16 @@ export async function GET(req: NextRequest) {
             return NextResponse.redirect(redirectUrl.toString())
         } catch (error) {
             console.error('❌ 保存微信用户信息失败:', error)
-            return NextResponse.redirect(
-                `${process.env.NEXT_PUBLIC_SITE_URL}/?error=save_user_failed`
-            )
+            const target = new URL(nextPath || "/", siteUrl)
+            target.searchParams.set("error", "save_user_failed")
+            return NextResponse.redirect(target)
         }
     } catch (error: any) {
         console.error('❌ 微信登录回调处理失败:', error)
-        return NextResponse.redirect(
-            `${process.env.NEXT_PUBLIC_SITE_URL}/?error=wechat_callback_failed`
-        )
+        const siteUrl = getSiteUrl(req)
+        const target = new URL("/", siteUrl)
+        target.searchParams.set("error", "wechat_callback_failed")
+        return NextResponse.redirect(target)
     }
 }
 
@@ -168,8 +218,11 @@ export async function POST(req: NextRequest) {
             )
         }
 
-        const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/wechat/callback`
-        const state = Math.random().toString(36).substr(2)
+        const body = await req.json().catch(() => ({}))
+        const siteUrl = getSiteUrl(req)
+        const callbackUrl = `${siteUrl}/api/auth/wechat/callback`
+        const redirectPath = normalizeRedirectPath(body?.redirectUrl)
+        const state = encodeState(redirectPath)
 
         const authUrl =
             `https://open.weixin.qq.com/connect/qrconnect?` +

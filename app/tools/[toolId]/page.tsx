@@ -166,6 +166,7 @@ export default function ToolPage({ params }: ToolPageProps) {
 
   return (
       <ToolLayout
+        toolId={toolId}
         title={metadata.title}
         description={metadata.description}
         category={metadata.category}

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useLanguage } from "@/components/language-provider"
 import { t } from "@/lib/i18n"
+import { useUser } from "@/hooks/use-user"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -51,6 +52,7 @@ interface ScrapedData {
 
 export function DataScraperPro() {
   const { language } = useLanguage()
+  const { user } = useUser()
   const tr = (key: string) => t(language, `dataScraperTool.${key}`)
 
   const [jobs, setJobs] = useState<ScrapingJob[]>([])
@@ -110,7 +112,10 @@ export function DataScraperPro() {
       // Real API Call
       const response = await fetch('/api/tools/scraper', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(user?.id ? { "x-user-id": String(user.id) } : {}),
+        },
         body: JSON.stringify({
           url: currentJob.url,
           dataTypes: selectedDataTypes
