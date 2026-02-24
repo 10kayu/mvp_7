@@ -723,6 +723,18 @@ export const en = {
             name: "File Format Converter",
             description: "Convert DOCX and XLSX files to TXT, HTML, CSV, or JSON with batch processing",
         },
+        universalCapacityReducer: {
+            name: "Universal Capacity Reducer",
+            description: "Reduce file size for Word/PDF/PPT/Excel/Pics/Video/Audio with smart and lossless modes",
+        },
+        universalFileMerger: {
+            name: "Universal File Merger",
+            description: "Merge Word/PDF/PPT/Excel/Pics/Video/Audio with automatic merge and package mode",
+        },
+        universalSignatureEditor: {
+            name: "Universal Signature Editor",
+            description: "Sign Word/PDF/PPT/Excel/Pics/Video/Audio with visual signing and integrity manifest",
+        },
         videoToGif: {
             name: "Video to GIF Creator",
             description: "Create optimized GIFs from video clips with custom settings",

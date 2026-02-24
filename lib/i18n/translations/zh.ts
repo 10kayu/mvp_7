@@ -625,6 +625,18 @@ export const zh = {
             name: "文件格式转换器",
             description: "将DOCX、XLSX文件批量转换为TXT、HTML、CSV或JSON",
         },
+        universalCapacityReducer: {
+            name: "全格式容量减小工具",
+            description: "支持 Word/PDF/PPT/Excel/Pics/Video/Audio 的智能与无损减容",
+        },
+        universalFileMerger: {
+            name: "全格式合并工具",
+            description: "支持 Word/PDF/PPT/Excel/Pics/Video/Audio 的自动合并与打包合并",
+        },
+        universalSignatureEditor: {
+            name: "全格式编辑签名工具",
+            description: "支持 Word/PDF/PPT/Excel/Pics/Video/Audio 的可视签名与清单签名",
+        },
         videoToGif: {
             name: "视频转GIF制作器",
             description: "创建优化的GIF，支持自定义设置",

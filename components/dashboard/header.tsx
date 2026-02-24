@@ -396,7 +396,7 @@ export function Header({
                     {isAdmin ? (
                       <DropdownMenuItem onClick={() => router.push('/market')}>
                         <Shield className="mr-2 h-4 w-4" />
-                        {language === 'zh' ? '裂变后台' : 'Market Admin'}
+                        {language === 'zh' ? '营销系统' : 'Marketing Systems'}
                       </DropdownMenuItem>
                     ) : null}
                     <DropdownMenuSeparator />

@@ -46,6 +46,14 @@ export default function InvitePage() {
   const [savingPoster, setSavingPoster] = useState(false)
   const [sharingPoster, setSharingPoster] = useState(false)
 
+  const goBack = useCallback(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back()
+      return
+    }
+    router.push("/")
+  }, [router])
+
   const ui = useMemo(
     () =>
       isZh
@@ -70,6 +78,7 @@ export default function InvitePage() {
             shareViaApps: "系统分享到应用",
             showQr: "二维码分享",
             hideQr: "收起二维码",
+            momentsHint: "如果想分享到朋友圈，请使用二维码分享。",
             qrHint: "扫码可直接打开邀请链接",
             qrAlt: "邀请二维码",
             webOnlyHint: "当前为 Web 端，可复制链接或二维码分享。",
@@ -102,6 +111,7 @@ export default function InvitePage() {
             shareViaApps: "Share via Apps",
             showQr: "Share QR",
             hideQr: "Hide QR",
+            momentsHint: "If you want to share to Moments, please use QR sharing.",
             qrHint: "Scan to open the invite link directly.",
             qrAlt: "Invite QR Code",
             webOnlyHint: "Web mode supports copy link and QR sharing.",
@@ -252,7 +262,11 @@ export default function InvitePage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-10">
+      <div className="container mx-auto px-4 py-10 space-y-4">
+        <Button variant="ghost" size="sm" className="h-8 px-1 gap-1" onClick={goBack}>
+          <ArrowLeft className="h-4 w-4" />
+          {ui.back}
+        </Button>
         <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
           {isZh ? "正在加载..." : "Loading..."}
         </div>
@@ -262,7 +276,11 @@ export default function InvitePage() {
 
   if (!user) {
     return (
-      <div className="container mx-auto px-4 py-10">
+      <div className="container mx-auto px-4 py-10 space-y-4">
+        <Button variant="ghost" size="sm" className="h-8 px-1 gap-1" onClick={goBack}>
+          <ArrowLeft className="h-4 w-4" />
+          {ui.back}
+        </Button>
         <div className="max-w-lg rounded-2xl border border-border bg-card p-8">
           <h1 className="text-2xl font-semibold">{ui.loginRequiredTitle}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{ui.loginRequiredDesc}</p>
@@ -285,23 +303,10 @@ export default function InvitePage() {
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-10 space-y-6">
-      <div className="md:hidden">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 px-1 gap-1"
-          onClick={() => {
-            if (typeof window !== "undefined" && window.history.length > 1) {
-              router.back()
-              return
-            }
-            router.push("/")
-          }}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {ui.back}
-        </Button>
-      </div>
+      <Button variant="ghost" size="sm" className="h-8 px-1 gap-1 w-fit" onClick={goBack}>
+        <ArrowLeft className="h-4 w-4" />
+        {ui.back}
+      </Button>
 
       <section className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">{ui.title}</h1>
@@ -387,6 +392,7 @@ export default function InvitePage() {
             {showQr ? ui.hideQr : ui.showQr}
           </Button>
         </div>
+        <p className="text-xs text-muted-foreground">{ui.momentsHint}</p>
 
         {showQr ? (
           <div className="space-y-3 pt-1">

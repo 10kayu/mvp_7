@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { RefreshCcw, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -106,7 +107,7 @@ function StatCard({ title, value }: { title: string; value: number | string }) {
   )
 }
 
-export function MarketDashboardClient() {
+export function MarketDashboardClient({ region }: { region: "CN" | "INTL" }) {
   const router = useRouter()
 
   const [tab, setTab] = useState<MarketTabKey>("overview")
@@ -184,13 +185,18 @@ export function MarketDashboardClient() {
   return (
     <div className="min-h-screen bg-muted/20">
       <div className="h-14 border-b bg-background px-6 flex items-center justify-between">
-        <div className="font-semibold">Market 裂变后台</div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => void loadAll()} disabled={loading}>
+        <div className="font-semibold">4. 用户裂变系统</div>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="gap-1">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            区域: {region}
+          </Badge>
+          <Button variant="outline" onClick={() => void loadAll()} disabled={loading} className="gap-1.5">
+            <RefreshCcw className="h-4 w-4" />
             {loading ? "刷新中..." : "刷新"}
           </Button>
           <Button asChild variant="outline">
-            <Link href="/admin">打开 /admin</Link>
+            <Link href="/market">返回系统导航</Link>
           </Button>
           <Button variant="destructive" onClick={logout}>退出登录</Button>
         </div>

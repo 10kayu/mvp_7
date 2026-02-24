@@ -273,6 +273,9 @@ export function InviteShareButton({ toolId, toolTitle }: { toolId: string; toolT
                   {showQr ? (isZh ? "收起二维码" : "Hide QR") : isZh ? "二维码分享" : "Share QR"}
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground">
+                {isZh ? "如果想分享到朋友圈，请使用二维码分享。" : "If you want to share to Moments, please use QR sharing."}
+              </p>
 
               {showQr ? (
                 <div className="space-y-3 pt-1">

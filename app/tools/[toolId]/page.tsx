@@ -19,6 +19,9 @@ import { FileDecompressor } from "@/components/tools/file-decompressor"
 import { FileEncryptor } from "@/components/tools/file-encryptor"
 import { FileDecryptor } from "@/components/tools/file-decryptor"
 import { CloudDrive } from "@/components/tools/cloud-drive"
+import { UniversalCapacityReducer } from "@/components/tools/universal-capacity-reducer"
+import { UniversalMergeStudio } from "@/components/tools/universal-merge-studio"
+import { UniversalSignatureStudio } from "@/components/tools/universal-signature-studio"
 import { getTranslations } from "@/lib/i18n";
 import { cookies } from "next/headers";
 import { getToolCreditCost } from "@/lib/credits/pricing"
@@ -39,6 +42,9 @@ const toolComponents = {
   "data-scraper": DataScraperPro,
   "file-compressor": FileCompressor,
   "file-decompressor": FileDecompressor,
+  "universal-capacity-reducer": UniversalCapacityReducer,
+  "universal-file-merger": UniversalMergeStudio,
+  "universal-signature-editor": UniversalSignatureStudio,
   "file-encryptor": FileEncryptor,
   "file-decryptor": FileDecryptor,
   "cloud-drive": CloudDrive,
@@ -63,6 +69,27 @@ const getToolMetadata = (language: 'zh' | 'en') => {
     "file-format-converter": {
       title: t.tools?.fileFormatConverter?.name || "File Format Converter",
       description: t.tools?.fileFormatConverter?.description || "Convert DOC, PPT, XLS files to PDF with batch processing",
+      category: "file-converters",
+    },
+    "universal-capacity-reducer": {
+      title: t.tools?.universalCapacityReducer?.name || "Universal Capacity Reducer",
+      description:
+        t.tools?.universalCapacityReducer?.description ||
+        "Reduce file size for Word/PDF/PPT/Excel/Pics/Video/Audio with smart or lossless mode",
+      category: "file-converters",
+    },
+    "universal-file-merger": {
+      title: t.tools?.universalFileMerger?.name || "Universal File Merger",
+      description:
+        t.tools?.universalFileMerger?.description ||
+        "Merge Word/PDF/PPT/Excel/Pics/Video/Audio with automatic media merge and package mode",
+      category: "file-converters",
+    },
+    "universal-signature-editor": {
+      title: t.tools?.universalSignatureEditor?.name || "Universal Signature Editor",
+      description:
+        t.tools?.universalSignatureEditor?.description ||
+        "Sign Word/PDF/PPT/Excel/Pics/Video/Audio with visual image signing and integrity manifest",
       category: "file-converters",
     },
     "video-to-gif": {
