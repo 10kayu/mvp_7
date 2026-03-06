@@ -24,6 +24,7 @@ import { UniversalMergeStudio } from "@/components/tools/universal-merge-studio"
 import { UniversalSignatureStudio } from "@/components/tools/universal-signature-studio"
 import { getTranslations } from "@/lib/i18n";
 import { cookies } from "next/headers";
+import { LANGUAGE_PREFERENCE_COOKIE_KEY, parseLanguagePreference } from "@/lib/i18n/language-preference"
 import { getToolCreditCost } from "@/lib/credits/pricing"
 
 const toolComponents = {
@@ -179,9 +180,7 @@ export default function ToolPage({ params }: ToolPageProps) {
   const { toolId } = params
   const ToolComponent = toolComponents[toolId as keyof typeof toolComponents]
 
-  // 从 cookie 获取语言偏好，如果没有则默认为中文
-  const langCookie = cookies().get('language')?.value;
-  const language = (langCookie === 'en' ? 'en' : 'zh') as 'zh' | 'en';
+  const language = (parseLanguagePreference(cookies().get(LANGUAGE_PREFERENCE_COOKIE_KEY)?.value) ?? 'zh') as 'zh' | 'en'
 
   const toolMetadata = getToolMetadata(language);
   const metadata = toolMetadata[toolId as keyof typeof toolMetadata]

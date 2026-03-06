@@ -3,16 +3,21 @@ import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
-// import { Suspense } from "react"
+import { cookies, headers } from 'next/headers'
+
 import { ThemeProvider } from "@/components/theme-provider"
+import { ThemePaletteScript } from "@/components/theme-palette-script"
 import { LanguageProvider } from "@/components/language-provider"
 import { I18nProvider } from "@/lib/i18n/context"
-// import { UserProvider } from "@/components/user-context";
 import { Toaster } from "@/components/ui/sonner"
 import { MpDisableZoom } from "@/components/mp-disable-zoom"
 import { MpDownloadGuard } from "@/components/mp-download-guard"
+import {
+  getDefaultLanguage,
+  LANGUAGE_PREFERENCE_COOKIE_KEY,
+  parseLanguagePreference,
+} from "@/lib/i18n/language-preference"
 import "./globals.css"
-import { headers } from 'next/headers'
 
 export const metadata: Metadata = {
   title: "morntool",
@@ -29,29 +34,31 @@ export const viewport = {
 } as const
 
 export default function RootLayout({
-                                     children,
-                                   }: Readonly<{
+  children,
+}: Readonly<{
   children: React.ReactNode
 }>) {
-  // 从服务器端获取地理信息头
-  const headersList = headers();
+  const headersList = headers()
+  const cookieStore = cookies()
+  const initialLanguage =
+    parseLanguagePreference(cookieStore.get(LANGUAGE_PREFERENCE_COOKIE_KEY)?.value) ?? getDefaultLanguage()
+
   const geoHeaders: Record<string, string> = {
     'x-user-region': headersList.get('x-user-region') || '',
     'x-user-country': headersList.get('x-user-country') || '',
     'x-user-currency': headersList.get('x-user-currency') || '',
-  };
+  }
 
-  // 过滤掉空值
   Object.keys(geoHeaders).forEach(key => {
     if (!geoHeaders[key as keyof typeof geoHeaders]) {
-      delete geoHeaders[key as keyof typeof geoHeaders];
+      delete geoHeaders[key as keyof typeof geoHeaders]
     }
-  });
+  })
 
   return (
-      <html lang="en" suppressHydrationWarning>
+      <html lang={initialLanguage} suppressHydrationWarning data-palette="default">
       <head>
-        {/* 添加地理信息meta标签，供客户端使用 */}
+        <ThemePaletteScript />
         {geoHeaders['x-user-region'] && (
             <meta name="x-user-region" content={geoHeaders['x-user-region']} />
         )}
@@ -63,7 +70,7 @@ export default function RootLayout({
         )}
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
-      <LanguageProvider>
+      <LanguageProvider initialLanguage={initialLanguage}>
         <I18nProvider>
             <ThemeProvider
                 attribute="class"

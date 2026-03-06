@@ -393,7 +393,7 @@ export function UniversalSignatureStudio() {
               <div key={`${row.fileName}_${row.outputName}`} className="rounded-lg border p-3 text-sm">
                 <div className="font-medium">{row.fileName}</div>
                 <div className="text-muted-foreground">
-                  {toHumanSize(row.originalSize)} -> {toHumanSize(row.outputSize)} | {row.visualSignatureApplied ? (zh ? "可视签名" : "Visual signature") : (zh ? "清单签名" : "Manifest signature")}
+                  {toHumanSize(row.originalSize)} {"→"} {toHumanSize(row.outputSize)} {"|"} {row.visualSignatureApplied ? (zh ? "可视签名" : "Visual signature") : (zh ? "清单签名" : "Manifest signature")}
                 </div>
               </div>
             ))}

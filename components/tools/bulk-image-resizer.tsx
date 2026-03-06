@@ -50,7 +50,7 @@ export function BulkImageResizer() {
   const picaRef = useRef<Pica | null>(null)
   
   const { language } = useLanguage()
-  const tr = (key: string) => t(language, `bulkImageResizer.${key}`)
+  const tr = (key: string) => t(language, `tools.bulkImageResizer.${key}`)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newImages = acceptedFiles.map((file) => ({

@@ -8,7 +8,13 @@ import {
     ReactNode,
 } from "react";
 import type { Language } from "@/lib/i18n";
-import { isChinaDeployment } from "@/lib/config/deployment.config";
+import {
+    getDefaultLanguage,
+    LANGUAGE_PREFERENCE_COOKIE_KEY,
+    LANGUAGE_PREFERENCE_COOKIE_MAX_AGE,
+    LANGUAGE_PREFERENCE_STORAGE_KEY,
+    parseLanguagePreference,
+} from "@/lib/i18n/language-preference";
 
 interface LanguageContextType {
     language: Language;
@@ -16,11 +22,22 @@ interface LanguageContextType {
     toggleLanguage: () => void;
 }
 
+interface LanguageProviderProps {
+    children: ReactNode;
+    initialLanguage?: Language;
+}
+
 const LanguageContext = createContext<LanguageContextType | undefined>(
     undefined
 );
 
-const STORAGE_KEY = "preferred-language";
+function persistLanguagePreference(language: Language) {
+    if (typeof window === "undefined") return;
+
+    localStorage.setItem(LANGUAGE_PREFERENCE_STORAGE_KEY, language);
+    document.cookie = `${LANGUAGE_PREFERENCE_COOKIE_KEY}=${language}; path=/; max-age=${LANGUAGE_PREFERENCE_COOKIE_MAX_AGE}; samesite=lax`;
+    document.documentElement.lang = language;
+}
 
 /**
  * 语言提供者组件
@@ -28,43 +45,28 @@ const STORAGE_KEY = "preferred-language";
  *
  * 功能：
  * 1. 管理全局语言状态
- * 2. 持久化到 localStorage
- * 3. 根据部署区域自动设置默认语言（中国区域=中文，国际区域=英文）
- * 4. 允许用户手动切换语言偏好
- * 5. 提供语言切换功能
- *
- * 优先级：
- * 1. localStorage 中的用户选择（最高优先级）
- * 2. 部署区域设置（DEPLOYMENT_REGION）
- *    - 中国区域 (CN)：默认中文
- *    - 国际区域 (INTL)：强制英文
+ * 2. 持久化到 localStorage 与 cookie
+ * 3. 服务端读取 cookie 作为首屏语言，避免先英文再跳中文
+ * 4. 根据部署区域自动设置默认语言（中国区域=中文，国际区域=英文）
+ * 5. 允许用户手动切换语言偏好
  */
-export function LanguageProvider({ children }: { children: ReactNode }) {
-    const defaultLanguage: Language = isChinaDeployment() ? "zh" : "en";
-    const [language, setLanguageState] = useState<Language>(defaultLanguage);
+export function LanguageProvider({ children, initialLanguage }: LanguageProviderProps) {
+    const defaultLanguage = getDefaultLanguage();
+    const [language, setLanguageState] = useState<Language>(initialLanguage ?? defaultLanguage);
 
-    // 初始化语言
     useEffect(() => {
-        // 优先级1: 从 localStorage 读取用户选择
-        const saved = localStorage.getItem(STORAGE_KEY) as Language | null;
+        const saved = parseLanguagePreference(localStorage.getItem(LANGUAGE_PREFERENCE_STORAGE_KEY));
+        const nextLanguage = saved ?? initialLanguage ?? defaultLanguage;
 
-        if (saved === "zh" || saved === "en") {
-            setLanguageState(saved);
-            return;
-        }
+        setLanguageState((current) => (current === nextLanguage ? current : nextLanguage));
+        persistLanguagePreference(nextLanguage);
+    }, [defaultLanguage, initialLanguage]);
 
-        // 优先级2: 根据部署区域推断默认语言
-        setLanguageState(defaultLanguage);
-        localStorage.setItem(STORAGE_KEY, defaultLanguage);
-    }, [defaultLanguage]);
-
-    // 设置语言（带持久化）
     const setLanguage = (lang: Language) => {
         setLanguageState(lang);
-        localStorage.setItem(STORAGE_KEY, lang);
+        persistLanguagePreference(lang);
     };
 
-    // 切换语言（中英文互换）
     const toggleLanguage = () => {
         const newLang: Language = language === "zh" ? "en" : "zh";
         setLanguage(newLang);

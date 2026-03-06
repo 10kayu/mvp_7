@@ -209,6 +209,9 @@ export const tools: Tool[] = [
 export const hiddenHomeToolIds = [
   "text-multi-sender",
   "social-auto-poster",
+  "universal-capacity-reducer",
+  "universal-file-merger",
+  "universal-signature-editor",
 ] as const
 
 const hiddenHomeToolIdSet = new Set<string>(hiddenHomeToolIds)

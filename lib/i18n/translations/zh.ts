@@ -1169,6 +1169,7 @@ export const zh = {
         hundredPages: "100页",
         fiveHundredPages: "500页",
         scrape: "抓取",
+        items: "项",
         type: "类型",
         scrapingFailedSimple: "抓取失败",
         unknownError: "未知错误",

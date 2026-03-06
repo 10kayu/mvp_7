@@ -1,11 +1,11 @@
 import type React from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Home, Zap } from "lucide-react"
+import { ArrowLeft, Home, Settings2, Zap } from "lucide-react"
 import Link from "next/link"
-import { ThemeSwitch } from "@/components/theme-switch"
 import { getTranslations } from '@/lib/i18n'
 import { AdBanner } from "@/components/dashboard/ad-banner"
 import { InviteShareButton } from "@/components/market/invite-share-button"
+import { ToolHistoryPanel } from "@/components/tool-history-panel"
 
 interface ToolLayoutProps {
   toolId: string
@@ -83,7 +83,17 @@ export function ToolLayout({ toolId, title, description, category, language, cre
               </div>
               <div className="flex items-center gap-1 md:gap-2 shrink-0">
                 <InviteShareButton toolId={toolId} toolTitle={title} />
-                <ThemeSwitch/>
+                <ToolHistoryPanel
+                  toolId={toolId}
+                  toolTitle={title}
+                  toolDescription={description}
+                  language={language}
+                />
+                <Link href="/settings#appearance">
+                  <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full">
+                    <Settings2 className="w-4 h-4" />
+                  </Button>
+                </Link>
                 <Link href="/">
                   <Button variant="outline" size="sm" className="gap-2 bg-transparent h-9 px-2 md:px-3">
                     <Home className="w-4 h-4" />

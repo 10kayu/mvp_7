@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useTheme } from "next-themes"
 import { Input } from "@/components/ui/input"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { useLanguage } from "@/components/language-provider";
@@ -21,7 +20,7 @@ import {
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu"
 import { getSupabaseClient } from "@/lib/supabase"
-import { Search, Zap, User, Menu, Sparkles, Settings2, Globe, Moon, Sun, Check, Coins, Download, Shield, CalendarDays, TrendingUp } from "lucide-react"
+import { Search, Zap, User, Menu, Sparkles, Settings2, Globe, Check, Coins, Download, Shield, CalendarDays, TrendingUp, Palette } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Calendar } from "@/components/ui/calendar"
@@ -58,7 +57,6 @@ export function Header({
   const router = useRouter();
   const { language } = useLanguage();
   const t = useTranslations(language);
-  const { setTheme, theme } = useTheme();
   const { setLanguage } = useLanguage();
   const ui = language === 'zh'
     ? { account: '账户', credits: '积分', logout: '退出登录' }
@@ -313,10 +311,15 @@ export function Header({
                     <Settings2 className="w-5 h-5 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>{t.header.settings || "Settings"}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  
+                  <DropdownMenuItem onClick={() => router.push("/settings#appearance")}>
+                    <Palette className="mr-2 h-4 w-4" />
+                    <span>{language === 'zh' ? '外观与主题' : 'Appearance & Theme'}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <Globe className="mr-2 h-4 w-4" />
@@ -330,25 +333,6 @@ export function Header({
                       <DropdownMenuItem onClick={() => setLanguage('en')}>
                         <span>{t.header.english || "EN"}</span>
                         {language === 'en' && <Check className="ml-auto h-4 w-4" />}
-                      </DropdownMenuItem>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      {theme === 'dark' ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
-                      <span>{language === 'zh' ? (theme === 'dark' ? '深色模式' : '浅色模式') : (theme === 'dark' ? 'Dark Mode' : 'Light Mode')}</span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuItem onClick={() => setTheme('light')}>
-                        <Sun className="mr-2 h-4 w-4" />
-                        <span>{language === 'zh' ? '浅色' : 'Light'}</span>
-                        {theme === 'light' && <Check className="ml-auto h-4 w-4" />}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setTheme('dark')}>
-                        <Moon className="mr-2 h-4 w-4" />
-                        <span>{language === 'zh' ? '深色' : 'Dark'}</span>
-                        {theme === 'dark' && <Check className="ml-auto h-4 w-4" />}
                       </DropdownMenuItem>
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>

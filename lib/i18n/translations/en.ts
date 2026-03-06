@@ -1268,6 +1268,7 @@ export const en = {
         hundredPages: "100 pages",
         fiveHundredPages: "500 pages",
         scrape: "Scrape",
+        items: "items",
         type: "Type",
         scrapingFailedSimple: "Scraping failed",
         unknownError: "Unknown error",

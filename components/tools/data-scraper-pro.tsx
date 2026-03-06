@@ -137,6 +137,14 @@ export function DataScraperPro() {
         results: result.count
       } : job)));
 
+      if (typeof result?.warning === "string" && result.warning.trim()) {
+        toast.warning(
+          language === "zh"
+            ? "目标页面可能有登录或风控限制，当前仅返回可见数据。"
+            : result.warning
+        );
+      }
+
       toast.success(tr("scrapingCompleted").replace("{count}", String(result.count)));
 
     } catch (error: any) {
