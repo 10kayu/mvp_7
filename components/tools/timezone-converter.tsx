@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Clock, Globe, Calendar, Plus, Trash2, Copy, CheckCircle } from "lucide-react"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 interface TimeZone {
   id: string
@@ -121,10 +122,15 @@ export function TimezoneConverter() {
     setWorldClocks((prev) => prev.filter((clock) => clock.id !== id))
   }
 
-  const copyTime = (timeString: string) => {
-    navigator.clipboard.writeText(timeString)
-    setCopiedTime(timeString)
-    setTimeout(() => setCopiedTime(null), 2000)
+  const copyTime = async (timeString: string) => {
+    try {
+      await navigator.clipboard.writeText(timeString)
+      setCopiedTime(timeString)
+      setTimeout(() => setCopiedTime(null), 2000)
+      emitToolSuccess("timezone-converter")
+    } catch (error) {
+      console.error("Failed to copy time:", error)
+    }
   }
 
   const convertedResult = convertTime()

@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Upload, X, Download, ImageIcon, Settings, Maximize2 } from "lucide-react"
 import { useDropzone } from "react-dropzone"
 import pica, { Pica } from "pica"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 interface ImageFile {
   id: string
@@ -149,6 +150,7 @@ export function BulkImageResizer() {
       picaRef.current = picaInstance
       const targetWidthValue = Math.max(1, targetWidth > 0 ? targetWidth : customWidth)
       const targetHeightValue = Math.max(1, targetHeight > 0 ? targetHeight : customHeight)
+      let successCount = 0
 
       for (const image of images) {
         try {
@@ -157,7 +159,6 @@ export function BulkImageResizer() {
           const originalHeight = sourceImage.naturalHeight || sourceImage.height
           const outputType = resolveOutputType(image.file)
           const outputExtension = resolveOutputExtension(outputType)
-          const outputName = `${image.name.replace(/\.[^/.]+$/, "")}-resized.${outputExtension}`
 
           let renderWidth = targetWidthValue
           let renderHeight = targetHeightValue
@@ -215,8 +216,7 @@ export function BulkImageResizer() {
                 : img
             )
           )
-
-          triggerDownload(outputUrl, outputName)
+          successCount += 1
         } catch (error) {
           console.error("Failed to process image:", error)
           setImages((prev) =>
@@ -227,6 +227,10 @@ export function BulkImageResizer() {
             )
           )
         }
+      }
+
+      if (successCount > 0) {
+        emitToolSuccess("bulk-image-resizer")
       }
     } catch (error) {
       console.error("Processing failed:", error)

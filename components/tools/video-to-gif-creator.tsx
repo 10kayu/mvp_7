@@ -11,6 +11,7 @@ import { useDropzone } from "react-dropzone"
 import { FFmpeg } from "@ffmpeg/ffmpeg"
 import { fetchFile, toBlobURL } from "@ffmpeg/util"
 import { useLanguage } from "@/components/language-provider"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 interface VideoFile {
   id: string
@@ -171,6 +172,7 @@ export function VideoToGifCreator() {
       link.href = url
       link.download = `${video.name.split(".")[0] || "video"}.gif`
       link.click()
+      emitToolSuccess("video-to-gif")
 
       try {
         await ffmpeg.deleteFile(inputName)

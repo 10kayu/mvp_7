@@ -21,6 +21,7 @@ import {
   triggerDownload,
   type FileFamily,
 } from "@/lib/tools/universal-file-utils"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 type SignatureFile = {
   id: string
@@ -284,6 +285,7 @@ export function UniversalSignatureStudio() {
       setResultBlob(blob)
       setResultFileName(outputName)
       setProgress(100)
+      emitToolSuccess("universal-signature-editor")
     } catch (signError: any) {
       setError(signError?.message || (zh ? "签名处理失败" : "Signing failed"))
     } finally {
@@ -409,4 +411,3 @@ export function UniversalSignatureStudio() {
     </div>
   )
 }
-

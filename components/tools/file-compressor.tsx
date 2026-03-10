@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Download, FileArchive, Upload } from "lucide-react"
 import { toast } from "sonner"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 type CompressionAlgorithm = "gzip" | "deflate"
 
@@ -72,6 +73,7 @@ export function FileCompressor() {
       setResultBlob(compressed)
       setResultName(`${file.name}.${extension}`)
       setProgress(100)
+      emitToolSuccess("file-compressor")
 
       toast.success(zh ? "压缩完成" : "Compression completed")
     } catch (error: any) {

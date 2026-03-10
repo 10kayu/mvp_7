@@ -22,6 +22,7 @@ import {
   toHumanSize,
   triggerDownload,
 } from "@/lib/tools/universal-file-utils"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 type CompressionMode = "smart" | "lossless"
 type LosslessAlgorithm = "gzip" | "deflate"
@@ -297,6 +298,7 @@ export function UniversalCapacityReducer() {
   const runCompression = async () => {
     if (rows.length === 0 || working) return
     setWorking(true)
+    let successCount = 0
 
     for (const row of rows) {
       try {
@@ -314,6 +316,7 @@ export function UniversalCapacityReducer() {
           outputName: result.fileName,
           method: result.method,
         })
+        successCount += 1
       } catch (error: any) {
         updateRow(row.id, {
           status: "error",
@@ -323,6 +326,9 @@ export function UniversalCapacityReducer() {
       }
     }
 
+    if (successCount > 0) {
+      emitToolSuccess("universal-capacity-reducer")
+    }
     setWorking(false)
   }
 
@@ -490,4 +496,3 @@ export function UniversalCapacityReducer() {
     </div>
   )
 }
-

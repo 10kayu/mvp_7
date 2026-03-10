@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useLanguage } from "@/components/language-provider"
 import { t } from "@/lib/i18n"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DollarSign, ArrowRightLeft, Calculator, RefreshCw } from "lucide-react"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 interface Currency {
   code: string
@@ -64,6 +65,7 @@ export function CurrencyConverter() {
   const [exchangeRate, setExchangeRate] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<string>("")
+  const userInteractedRef = useRef(false)
 
   // Bulk conversion
   const [bulkInput, setBulkInput] = useState("")
@@ -101,6 +103,10 @@ export function CurrencyConverter() {
       setExchangeRate(rate)
       setConvertedAmount(result)
       setLastUpdated(new Date().toLocaleString())
+      if (userInteractedRef.current) {
+        emitToolSuccess("currency-converter")
+        userInteractedRef.current = false
+      }
     } catch (error) {
       console.error("Conversion failed:", error)
     } finally {
@@ -109,6 +115,7 @@ export function CurrencyConverter() {
   }
 
   const swapCurrencies = () => {
+    userInteractedRef.current = true
     setFromCurrency(toCurrency)
     setToCurrency(fromCurrency)
   }
@@ -129,6 +136,9 @@ export function CurrencyConverter() {
         result: amount * rate,
       }))
       setBulkResults(results)
+      if (results.length > 0) {
+        emitToolSuccess("currency-converter")
+      }
     } catch (error) {
       console.error("Bulk conversion failed:", error)
     } finally {
@@ -184,7 +194,10 @@ export function CurrencyConverter() {
                     type="number"
                     placeholder={tr("enterAmount")}
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={(e) => {
+                      userInteractedRef.current = true
+                      setAmount(e.target.value)
+                    }}
                     className="text-lg"
                   />
                 </div>
@@ -192,7 +205,13 @@ export function CurrencyConverter() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>{tr("from")}</Label>
-                    <Select value={fromCurrency} onValueChange={setFromCurrency}>
+                    <Select
+                      value={fromCurrency}
+                      onValueChange={(value) => {
+                        userInteractedRef.current = true
+                        setFromCurrency(value)
+                      }}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -208,7 +227,13 @@ export function CurrencyConverter() {
 
                   <div className="space-y-2">
                     <Label>{tr("to")}</Label>
-                    <Select value={toCurrency} onValueChange={setToCurrency}>
+                    <Select
+                      value={toCurrency}
+                      onValueChange={(value) => {
+                        userInteractedRef.current = true
+                        setToCurrency(value)
+                      }}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>

@@ -9,6 +9,7 @@ import { useDropzone } from "react-dropzone"
 import { useI18n } from '@/lib/i18n/context'
 import * as mammoth from "mammoth"
 import * as XLSX from "xlsx"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 interface ConversionFile {
   id: string
@@ -115,6 +116,7 @@ export function FileFormatConverter() {
 
     setIsConverting(true)
     setConversionError(null)
+    let successCount = 0
 
     setFiles((prev) => prev.map((file) => ({ ...file, status: "converting" as const, errorMessage: undefined })))
 
@@ -170,6 +172,7 @@ export function FileFormatConverter() {
                 : item
             )
           )
+          successCount += 1
         } catch (error) {
           console.error("Conversion failed:", error)
           setFiles((prev) =>
@@ -180,6 +183,10 @@ export function FileFormatConverter() {
             )
           )
         }
+      }
+
+      if (successCount > 0) {
+        emitToolSuccess("file-format-converter")
       }
     } catch (error) {
       console.error("Conversion failed:", error)

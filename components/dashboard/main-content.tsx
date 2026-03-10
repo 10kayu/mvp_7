@@ -117,7 +117,8 @@ export function MainContent({
                   return
                 }
 
-                if ((user && user.credits >= 0) || !user) {
+                const requiredCredits = creditCost ?? 0
+                if ((user && user.credits >= requiredCredits) || !user) {
                   handleToolClick(tool.id)
                 } else {
                   alert(t.errors.promptForExceedingUsage)

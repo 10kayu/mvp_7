@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch"
 import { Progress } from "@/components/ui/progress"
 import { Upload, Mail, Users, FileText, Send, Clock, CheckCircle, AlertCircle, Eye, Settings, Plus, Trash2, X } from "lucide-react"
 import { toast } from "sonner"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 interface EmailTemplate {
   id: string
@@ -624,6 +625,9 @@ Best regards,
     }
 
     setIsSending(false)
+    if (successCount > 0) {
+      emitToolSuccess("email-multi-sender")
+    }
     toast.success(t.emailMultiSender.campaignFinished || "Email campaign finished!", {
       description: `${t.emailMultiSender.sentCount || "Sent"}: ${successCount}, ${t.emailMultiSender.failedCount || "Failed"}: ${failedCount}`,
     })

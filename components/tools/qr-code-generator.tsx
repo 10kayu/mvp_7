@@ -12,6 +12,7 @@ import { QrCode, Download, Copy, Wifi, User, Link, MessageSquare, Palette } from
 import { toast } from "sonner"
 import { useLanguage } from "@/components/language-provider"
 import { useUser } from "@/hooks/use-user"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 interface QRCodeData {
   type: "url" | "text" | "wifi" | "contact" | "sms"
@@ -129,6 +130,7 @@ export function QrCodeGenerator() {
       const objectUrl = URL.createObjectURL(qrBlob)
       setGeneratedQR(objectUrl)
       toast.success(tx("二维码已生成", "QR code generated"))
+      emitToolSuccess("qr-generator")
     } catch (error: any) {
       toast.error(error?.message || tx("二维码生成失败", "QR generation failed"))
     } finally {

@@ -6,6 +6,7 @@ import { getTranslations } from '@/lib/i18n'
 import { AdBanner } from "@/components/dashboard/ad-banner"
 import { InviteShareButton } from "@/components/market/invite-share-button"
 import { ToolHistoryPanel } from "@/components/tool-history-panel"
+import { ToolCreditConsumer } from "@/components/tool-credit-consumer"
 
 interface ToolLayoutProps {
   toolId: string
@@ -56,6 +57,7 @@ export function ToolLayout({ toolId, title, description, category, language, cre
 
   return (
       <div className="min-h-screen bg-background">
+        <ToolCreditConsumer toolId={toolId} creditCost={creditCost} language={language} />
         {/* Header */}
         <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
           <div className="container mx-auto px-4 py-3 md:px-6 md:py-4">

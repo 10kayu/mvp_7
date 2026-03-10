@@ -26,6 +26,7 @@ import {
   Instagram,
   Trash2,
 } from "lucide-react"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 interface SocialPost {
   id: string
@@ -107,6 +108,7 @@ export function SocialAutoPoster() {
     setIsPosting(false)
     setPostProgress(0)
     handleSavePost()
+    emitToolSuccess("social-auto-poster")
   }
 
   const deletePost = (postId: string) => {

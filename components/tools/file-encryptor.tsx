@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Download, KeyRound, Lock, Upload } from "lucide-react"
 import { toast } from "sonner"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 const ENCRYPTION_SIGNATURE = new TextEncoder().encode("MVP7ENC1")
 const PBKDF2_ITERATIONS = 120000
@@ -100,6 +101,7 @@ export function FileEncryptor() {
       setResultBlob(blob)
       setResultName(`${file.name}.menc`)
       setProgress(100)
+      emitToolSuccess("file-encryptor")
       toast.success(zh ? "加密完成" : "Encryption completed")
     } catch (error: any) {
       toast.error(zh ? `加密失败：${error?.message || "未知错误"}` : `Encryption failed: ${error?.message || "Unknown error"}`)

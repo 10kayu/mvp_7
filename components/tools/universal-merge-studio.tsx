@@ -23,6 +23,7 @@ import {
   triggerDownload,
   type FileFamily,
 } from "@/lib/tools/universal-file-utils"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 type MergeStrategy = "auto" | "package"
 
@@ -294,6 +295,7 @@ export function UniversalMergeStudio() {
 
       setProgress(100)
       setResult(output)
+      emitToolSuccess("universal-file-merger")
     } catch (mergeError: any) {
       setError(mergeError?.message || (zh ? "合并失败" : "Merge failed"))
     } finally {
@@ -424,4 +426,3 @@ export function UniversalMergeStudio() {
     </div>
   )
 }
-

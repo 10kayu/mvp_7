@@ -11,6 +11,7 @@ import { Slider } from "@/components/ui/slider"
 import { Upload, X, Download, FileImage, Settings, Eye } from "lucide-react"
 import { useDropzone } from "react-dropzone"
 import jsPDF from "jspdf"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 interface ImageFile {
   id: string
@@ -160,6 +161,7 @@ export function JpegToPdfConverter() {
       // Save the PDF
       const fileName = "converted-images.pdf"
       pdf.save(fileName)
+      emitToolSuccess("jpeg-to-pdf")
     } catch (error) {
       console.error("Conversion failed:", error)
       alert(tr("conversionFailed"))

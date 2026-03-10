@@ -665,6 +665,7 @@ export const zh = {
             imagesToProcess: "待处理图像",
             reviewImages: "在处理前预览您的图像",
             downloadAll: "下载全部",
+            download: "下载",
             ready: "就绪",
             processing: "处理中...",
             completed: "完成",

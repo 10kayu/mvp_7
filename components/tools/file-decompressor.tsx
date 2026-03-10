@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Download, FileArchive, Upload } from "lucide-react"
 import { toast } from "sonner"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 type DecompressionAlgorithm = "auto" | "gzip" | "deflate"
 
@@ -138,6 +139,7 @@ export function FileDecompressor() {
       setResultBlob(decompressed)
       setResultName(buildOutputName(file.name, usedAlgorithm))
       setProgress(100)
+      emitToolSuccess("file-decompressor")
       toast.success(zh ? "解压完成" : "Decompression completed")
     } catch (error: any) {
       toast.error(zh ? `解压失败：${error?.message || "未知错误"}` : `Decompression failed: ${error?.message || "Unknown error"}`)

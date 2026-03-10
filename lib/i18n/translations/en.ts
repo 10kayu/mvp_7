@@ -763,6 +763,7 @@ export const en = {
             imagesToProcess: "Images to Process",
             reviewImages: "Review your images before processing",
             downloadAll: "Download All",
+            download: "Download",
             ready: "Ready",
             processing: "Processing...",
             completed: "Completed",

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Cloud, Copy, Download, RefreshCw, Trash2, Upload } from "lucide-react"
 import { toast } from "sonner"
 import { useUser } from "@/hooks/use-user"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 interface StoredFile {
   id: string
@@ -80,6 +81,7 @@ export function CloudDrive() {
         throw new Error(result?.error || "Upload failed")
       }
       toast.success(zh ? "上传成功" : "Upload successful")
+      emitToolSuccess("cloud-drive")
       await loadFiles()
     } catch (error: any) {
       toast.error(zh ? `上传失败：${error?.message || "未知错误"}` : `Upload failed: ${error?.message || "Unknown error"}`)

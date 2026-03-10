@@ -19,6 +19,33 @@ function getSupabase() {
   return supabaseInstance
 }
 
+function normalizeReferenceId(input: string | undefined, userId: string, toolId: string) {
+  const raw = String(input || "").trim()
+  if (raw) return raw.slice(0, 180)
+  return `consume_${toolId}_${userId}_${Date.now()}`
+}
+
+function isCloudbaseCollectionMissing(error: any) {
+  const message = String(error?.message || "")
+  const code = String(error?.code || "")
+  return (
+    message.includes("Db or Table not exist") ||
+    message.includes("DATABASE_COLLECTION_NOT_EXIST") ||
+    code.includes("DATABASE_COLLECTION_NOT_EXIST")
+  )
+}
+
+async function ensureCloudbaseCollection(db: any, collectionName: string) {
+  try {
+    await db.collection(collectionName).limit(1).get()
+  } catch (error: any) {
+    if (!isCloudbaseCollectionMissing(error)) {
+      throw error
+    }
+    await db.createCollection(collectionName)
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -36,11 +63,39 @@ export async function POST(req: NextRequest) {
     if (!cost || cost <= 0) {
       return NextResponse.json({ error: "Unknown toolId" }, { status: 400 })
     }
+    const finalReferenceId = normalizeReferenceId(referenceId, userId, toolId)
 
     const isChinaRegion = resolveDeploymentRegion() === "CN"
 
     if (!isChinaRegion) {
       const supabase = getSupabase()
+
+      const { data: existingTx, error: existingTxError } = await supabase
+        .from("credit_transactions")
+        .select("id")
+        .eq("reference_id", finalReferenceId)
+        .maybeSingle()
+
+      if (existingTxError) {
+        console.error("Load existing consume tx failed:", existingTxError)
+        return NextResponse.json({ error: "Failed to validate consume transaction" }, { status: 500 })
+      }
+
+      if (existingTx?.id) {
+        const { data: currentUser, error: currentUserError } = await supabase
+          .from("user")
+          .select("credits")
+          .eq("id", userId)
+          .maybeSingle()
+
+        if (currentUserError) {
+          console.error("Load current user after idempotent hit failed:", currentUserError)
+          return NextResponse.json({ error: "Failed to load user" }, { status: 500 })
+        }
+
+        const newCredits = Number(currentUser?.credits ?? 0)
+        return NextResponse.json({ success: true, newCredits, alreadyProcessed: true })
+      }
 
       const { data: user, error: loadError } = await supabase
         .from("user")
@@ -71,11 +126,18 @@ export async function POST(req: NextRequest) {
         type: "consume",
         amount: -cost,
         description: `Consumed ${cost} credits for tool ${toolId}`,
-        reference_id: referenceId || `consume_${toolId}_${Date.now()}`,
+        reference_id: finalReferenceId,
       })
 
       if (txError) {
+        const isDuplicate = String(txError?.code || "") === "23505"
+        if (isDuplicate) {
+          const { data: currentUser } = await supabase.from("user").select("credits").eq("id", userId).maybeSingle()
+          const currentCredits = Number(currentUser?.credits ?? newCredits)
+          return NextResponse.json({ success: true, newCredits: currentCredits, alreadyProcessed: true })
+        }
         console.error("Insert credit transaction failed:", txError)
+        return NextResponse.json({ error: "Failed to record credit transaction" }, { status: 500 })
       }
 
       return NextResponse.json({ success: true, newCredits })
@@ -89,9 +151,23 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "CloudBase unavailable" }, { status: 500 })
       }
 
+      await ensureCloudbaseCollection(db, "web_credit_transactions")
       const users = db.collection("web_users")
+      const existingTx = await db.collection("web_credit_transactions").where({ reference_id: finalReferenceId }).limit(1).get()
+      if (Array.isArray(existingTx?.data) && existingTx.data.length > 0) {
+        const currentUserDoc = await users.doc(userId).get()
+        const currentUserData = currentUserDoc?.data?.[0]
+        const currentCredits = Number(currentUserData?.credits ?? 0)
+        return NextResponse.json({ success: true, newCredits: currentCredits, alreadyProcessed: true })
+      }
+
       const userDoc = await users.doc(userId).get()
       const docData = userDoc?.data?.[0]
+
+      if (!docData) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 })
+      }
+
       const currentCredits = Number(docData?.credits ?? 0)
 
       if (!Number.isFinite(currentCredits) || currentCredits < cost) {
@@ -106,7 +182,7 @@ export async function POST(req: NextRequest) {
         type: "consume",
         amount: -cost,
         description: `Consumed ${cost} credits for tool ${toolId}`,
-        reference_id: referenceId || `consume_${toolId}_${Date.now()}`,
+        reference_id: finalReferenceId,
         created_at: new Date().toISOString(),
       })
 

@@ -32,6 +32,7 @@ import {
   Link as LinkIcon,
 } from "lucide-react"
 import { toast } from "sonner"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 interface ScrapingJob {
   id: string
@@ -145,6 +146,9 @@ export function DataScraperPro() {
         );
       }
 
+      if (Number(result.count) > 0) {
+        emitToolSuccess("data-scraper")
+      }
       toast.success(tr("scrapingCompleted").replace("{count}", String(result.count)));
 
     } catch (error: any) {

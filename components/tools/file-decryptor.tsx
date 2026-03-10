@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Download, LockOpen, Upload } from "lucide-react"
 import { toast } from "sonner"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 const ENCRYPTION_SIGNATURE = new TextEncoder().encode("MVP7ENC1")
 const PBKDF2_ITERATIONS = 120000
@@ -109,6 +110,7 @@ export function FileDecryptor() {
       setResultBlob(decryptedBlob)
       setResultName(outputName)
       setProgress(100)
+      emitToolSuccess("file-decryptor")
       toast.success(zh ? "解密成功" : "Decryption successful")
     } catch (error: any) {
       toast.error(

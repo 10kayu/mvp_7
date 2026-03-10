@@ -7,6 +7,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { passwordSecurity } from '@/lib/security/password-security'
 import { useUser } from "@/hooks/use-user"
 import { tools } from "./dashboard/tools-data"
+import { getToolCreditCost } from "@/lib/credits/pricing"
 import { Header } from "./dashboard/header"
 import { Sidebar } from "./dashboard/sidebar"
 import { MainContent } from "./dashboard/main-content"
@@ -221,6 +222,7 @@ export function Dashboard() {
 
   const handleToolClick = (toolId: string) => {
     console.log("handleToolClick, user:", user)
+    const requiredCredits = getToolCreditCost(toolId) ?? 0
 
     // Check if tool is uncompleted
     const uncompletedTools = ["text-multi-sender", "social-auto-poster"]
@@ -231,7 +233,7 @@ export function Dashboard() {
       return
     }
 
-    if ((user && user.credits >= 0) || !user) {
+    if ((user && user.credits >= requiredCredits) || !user) {
       // Add to recent tools
       setRecentTools((prev) => {
         const updated = [toolId, ...prev.filter(id => id !== toolId)].slice(0, 10)

@@ -24,6 +24,7 @@ import {
   Settings2
 } from "lucide-react"
 import { toast } from "sonner"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 export function TextUtilities() {
   const { language } = useLanguage()
@@ -67,6 +68,7 @@ export function TextUtilities() {
     const result = processor(inputText)
     setProcessedText(result)
     toast.success(tr("textProcessed"))
+    emitToolSuccess("text-utilities")
   }
 
   const convertToUpperCase = () => processText(t => t.toUpperCase())

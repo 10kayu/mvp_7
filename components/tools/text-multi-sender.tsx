@@ -28,6 +28,7 @@ import {
   Smartphone,
   MessageCircle,
 } from "lucide-react"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 interface MessageTemplate {
   id: string
@@ -122,6 +123,9 @@ export function TextMultiSender() {
 
     setIsSending(false)
     setSendProgress(0)
+    if (contacts.length > 0) {
+      emitToolSuccess("text-multi-sender")
+    }
   }
 
   const getTemplateContent = (template: MessageTemplate) => {

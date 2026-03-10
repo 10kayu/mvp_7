@@ -2,7 +2,7 @@
 
 import React from "react"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useLanguage } from "@/components/language-provider"
 import { t } from "@/lib/i18n"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calculator, ArrowRightLeft, Ruler, Weight, Thermometer, Droplets, History, Copy, Trash2, Clock } from "lucide-react"
 import { toast } from "sonner"
+import { emitToolSuccess } from "@/lib/credits/tool-success"
 
 interface Unit {
   name: string
@@ -97,6 +98,7 @@ export function UnitConverter() {
   const [toUnit, setToUnit] = useState("Foot")
   const [inputValue, setInputValue] = useState("1")
   const [result, setResult] = useState<number | null>(null)
+  const userInteractedRef = useRef(false)
 
   const currentCategory = unitCategories.find((cat) => cat.name === selectedCategory)!
   const fromUnitData = currentCategory.units.find((unit) => unit.name === fromUnit)!
@@ -144,9 +146,14 @@ export function UnitConverter() {
 
     const converted = convertValue(value, fromUnitData, toUnitData, selectedCategory)
     setResult(converted)
+    if (userInteractedRef.current) {
+      emitToolSuccess("unit-converter")
+      userInteractedRef.current = false
+    }
   }
 
   const swapUnits = () => {
+    userInteractedRef.current = true
     setFromUnit(toUnit)
     setToUnit(fromUnit)
     if (result !== null) {
@@ -156,6 +163,7 @@ export function UnitConverter() {
   }
 
   const handleCategoryChange = (category: string) => {
+    userInteractedRef.current = true
     setSelectedCategory(category)
     const newCategory = unitCategories.find((cat) => cat.name === category)!
     setFromUnit(newCategory.units[0].name)
@@ -180,6 +188,7 @@ export function UnitConverter() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
+    emitToolSuccess("unit-converter")
     toast.success("Copied to clipboard")
   }
 
@@ -222,7 +231,10 @@ export function UnitConverter() {
                   id="input-val"
                   type="number"
                   value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
+                  onChange={(e) => {
+                    userInteractedRef.current = true
+                    setInputValue(e.target.value)
+                  }}
                   className="h-16 text-3xl font-mono px-4 shadow-sm"
                   placeholder="0"
                 />
@@ -236,7 +248,13 @@ export function UnitConverter() {
             <div className="grid grid-cols-[1fr,auto,1fr] gap-2 sm:gap-4 items-center">
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">{tr("from")}</Label>
-                <Select value={fromUnit} onValueChange={setFromUnit}>
+                <Select
+                  value={fromUnit}
+                  onValueChange={(value) => {
+                    userInteractedRef.current = true
+                    setFromUnit(value)
+                  }}
+                >
                   <SelectTrigger className="h-12 bg-muted/10 border-0 ring-1 ring-inset ring-border hover:bg-muted/20 transition-colors">
                     <SelectValue />
                   </SelectTrigger>
@@ -257,7 +275,13 @@ export function UnitConverter() {
 
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">{tr("to")}</Label>
-                <Select value={toUnit} onValueChange={setToUnit}>
+                <Select
+                  value={toUnit}
+                  onValueChange={(value) => {
+                    userInteractedRef.current = true
+                    setToUnit(value)
+                  }}
+                >
                   <SelectTrigger className="h-12 bg-muted/10 border-0 ring-1 ring-inset ring-border hover:bg-muted/20 transition-colors">
                     <SelectValue />
                   </SelectTrigger>
