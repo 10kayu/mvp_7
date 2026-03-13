@@ -13,6 +13,7 @@ import { toast } from "sonner"
 import { useLanguage } from "@/components/language-provider"
 import { useUser } from "@/hooks/use-user"
 import { emitToolSuccess } from "@/lib/credits/tool-success"
+import { MpDownloadButton } from "@/components/mp-download-button"
 
 interface QRCodeData {
   type: "url" | "text" | "wifi" | "contact" | "sms"
@@ -493,10 +494,13 @@ export function QrCodeGenerator() {
 
                 {generatedQR && (
                   <div className="flex gap-2">
-                    <Button onClick={downloadQR} variant="outline" className="gap-2 bg-transparent">
-                      <Download className="w-4 h-4" />
-                      {tx("下载", "Download")}
-                    </Button>
+                    <MpDownloadButton
+                      blob={generatedQR ? fetch(generatedQR).then(r => r.blob()) : null}
+                      filename={`qr-code-${qrData.type}.png`}
+                      variant="outline"
+                      className="gap-2 bg-transparent"
+                      disabled={!generatedQR}
+                    />
                     <Button onClick={copyToClipboard} variant="outline" className="gap-2 bg-transparent">
                       <Copy className="w-4 h-4" />
                       {tx("复制", "Copy")}

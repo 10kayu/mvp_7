@@ -12,6 +12,7 @@ import { FFmpeg } from "@ffmpeg/ffmpeg"
 import { fetchFile, toBlobURL } from "@ffmpeg/util"
 import { useLanguage } from "@/components/language-provider"
 import { emitToolSuccess } from "@/lib/credits/tool-success"
+import { MpDownloadButton } from "@/components/mp-download-button"
 
 interface VideoFile {
   id: string

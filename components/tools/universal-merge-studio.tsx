@@ -24,6 +24,7 @@ import {
   type FileFamily,
 } from "@/lib/tools/universal-file-utils"
 import { emitToolSuccess } from "@/lib/credits/tool-success"
+import { MpDownloadButton } from "@/components/mp-download-button"
 
 type MergeStrategy = "auto" | "package"
 
@@ -368,11 +369,12 @@ export function UniversalMergeStudio() {
             <Button variant="outline" onClick={clearAll} disabled={files.length === 0 || working}>
               {zh ? "清空列表" : "Clear"}
             </Button>
-            {result ? (
-              <Button variant="outline" onClick={() => triggerDownload(result.blob, result.fileName)}>
-                {zh ? "下载合并结果" : "Download Result"}
-              </Button>
-            ) : null}
+            <MpDownloadButton
+              blob={result?.blob}
+              filename={result?.fileName || "merged.tar"}
+              variant="outline"
+              disabled={!result}
+            />
             {engineLoading ? <Badge variant="secondary">{zh ? "媒体引擎加载中..." : "Loading media engine..."}</Badge> : null}
             {engineReady ? <Badge variant="secondary">{zh ? "媒体引擎已就绪" : "Media engine ready"}</Badge> : null}
           </div>

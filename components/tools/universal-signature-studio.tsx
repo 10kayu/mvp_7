@@ -22,6 +22,7 @@ import {
   type FileFamily,
 } from "@/lib/tools/universal-file-utils"
 import { emitToolSuccess } from "@/lib/credits/tool-success"
+import { MpDownloadButton } from "@/components/mp-download-button"
 
 type SignatureFile = {
   id: string
@@ -340,11 +341,12 @@ export function UniversalSignatureStudio() {
             <Button variant="outline" onClick={clearAll} disabled={files.length === 0 || working}>
               {zh ? "清空列表" : "Clear"}
             </Button>
-            {resultBlob ? (
-              <Button variant="outline" onClick={() => triggerDownload(resultBlob, resultFileName)}>
-                {zh ? "下载签名结果包" : "Download Signed Package"}
-              </Button>
-            ) : null}
+            <MpDownloadButton
+              blob={resultBlob}
+              filename={resultFileName}
+              variant="outline"
+              disabled={!resultBlob}
+            />
           </div>
 
           {Object.keys(grouped).length > 0 ? (

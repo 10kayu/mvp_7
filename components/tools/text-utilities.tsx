@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { emitToolSuccess } from "@/lib/credits/tool-success"
+import { MpDownloadButton } from "@/components/mp-download-button"
 
 export function TextUtilities() {
   const { language } = useLanguage()
@@ -310,9 +311,13 @@ export function TextUtilities() {
                         <Copy className="w-3.5 h-3.5" />
                         {tr("copy")}
                     </Button>
-                    <Button size="icon" variant="outline" onClick={() => downloadAsFile(processedText, 'processed.txt')}>
-                        <Download className="w-3.5 h-3.5" />
-                    </Button>
+                    <MpDownloadButton
+                      blob={new Blob([processedText], { type: 'text/plain' })}
+                      filename="processed.txt"
+                      size="icon"
+                      variant="outline"
+                      disabled={!processedText}
+                    />
                 </div>
             </Card>
           </TabsContent>

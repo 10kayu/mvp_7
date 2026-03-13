@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Download, FileArchive, Upload } from "lucide-react"
 import { toast } from "sonner"
 import { emitToolSuccess } from "@/lib/credits/tool-success"
+import { MpDownloadButton } from "@/components/mp-download-button"
 
 type CompressionAlgorithm = "gzip" | "deflate"
 
@@ -136,10 +137,11 @@ export function FileCompressor() {
               <Upload className="w-4 h-4 mr-2" />
               {isCompressing ? (zh ? "压缩中..." : "Compressing...") : (zh ? "开始压缩" : "Start Compress")}
             </Button>
-            <Button variant="outline" onClick={handleDownload} disabled={!resultBlob}>
-              <Download className="w-4 h-4 mr-2" />
-              {zh ? "下载结果" : "Download"}
-            </Button>
+            <MpDownloadButton
+              blob={resultBlob}
+              filename={resultName || "compressed.bin"}
+              disabled={!resultBlob}
+            />
           </div>
         </CardContent>
       </Card>

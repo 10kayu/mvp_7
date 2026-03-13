@@ -14,6 +14,7 @@ import { Upload, X, Download, ImageIcon, Settings, Maximize2 } from "lucide-reac
 import { useDropzone } from "react-dropzone"
 import pica, { Pica } from "pica"
 import { emitToolSuccess } from "@/lib/credits/tool-success"
+import { MpDownloadButton } from "@/components/mp-download-button"
 
 interface ImageFile {
   id: string
@@ -468,11 +469,14 @@ export function BulkImageResizer() {
                       {image.status === "completed" && tr("completed")}
                     </span>
 
-                    {image.status === "completed" && (
-                      <Button variant="outline" size="sm" onClick={() => downloadImage(image)} className="gap-1">
-                        <Download className="w-3 h-3" />
-                        {tr("download")}
-                      </Button>
+                    {image.status === "completed" && image.outputUrl && (
+                      <MpDownloadButton
+                        blob={fetch(image.outputUrl).then(r => r.blob())}
+                        filename={`${image.name.replace(/\.[^/.]+$/, "")}-resized.${image.outputFormat?.toLowerCase() || "png"}`}
+                        variant="outline"
+                        size="sm"
+                        className="gap-1"
+                      />
                     )}
 
                     {image.status === "pending" && (

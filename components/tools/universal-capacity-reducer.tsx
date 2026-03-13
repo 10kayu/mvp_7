@@ -23,6 +23,7 @@ import {
   triggerDownload,
 } from "@/lib/tools/universal-file-utils"
 import { emitToolSuccess } from "@/lib/credits/tool-success"
+import { MpDownloadButton } from "@/components/mp-download-button"
 
 type CompressionMode = "smart" | "lossless"
 type LosslessAlgorithm = "gzip" | "deflate"
@@ -473,13 +474,12 @@ export function UniversalCapacityReducer() {
                       {row.status}
                     </Badge>
                     {row.status === "done" && row.outputBlob ? (
-                      <Button
+                      <MpDownloadButton
+                        blob={row.outputBlob}
+                        filename={row.outputName}
                         size="sm"
                         variant="outline"
-                        onClick={() => triggerDownload(row.outputBlob as Blob, row.outputName)}
-                      >
-                        {zh ? "下载" : "Download"}
-                      </Button>
+                      />
                     ) : null}
                     <Button size="sm" variant="ghost" onClick={() => removeRow(row.id)} disabled={working}>
                       {zh ? "移除" : "Remove"}

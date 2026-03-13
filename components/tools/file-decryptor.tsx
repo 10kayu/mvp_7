@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Download, LockOpen, Upload } from "lucide-react"
 import { toast } from "sonner"
 import { emitToolSuccess } from "@/lib/credits/tool-success"
+import { MpDownloadButton } from "@/components/mp-download-button"
 
 const ENCRYPTION_SIGNATURE = new TextEncoder().encode("MVP7ENC1")
 const PBKDF2_ITERATIONS = 120000
@@ -168,10 +169,12 @@ export function FileDecryptor() {
               <Upload className="w-4 h-4 mr-2" />
               {isWorking ? (zh ? "解密中..." : "Decrypting...") : (zh ? "开始解密" : "Decrypt")}
             </Button>
-            <Button variant="outline" onClick={handleDownload} disabled={!resultBlob}>
-              <Download className="w-4 h-4 mr-2" />
-              {zh ? "下载原文件" : "Download"}
-            </Button>
+            <MpDownloadButton
+              blob={resultBlob}
+              filename={resultName || "decrypted.bin"}
+              variant="outline"
+              disabled={!resultBlob}
+            />
           </div>
         </CardContent>
       </Card>

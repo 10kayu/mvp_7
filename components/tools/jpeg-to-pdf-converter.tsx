@@ -13,6 +13,7 @@ import { Upload, X, Download, FileImage, FileText, Settings, Eye } from "lucide-
 import { useDropzone } from "react-dropzone"
 import jsPDF from "jspdf"
 import { emitToolSuccess } from "@/lib/credits/tool-success"
+import { MpDownloadButton } from "@/components/mp-download-button"
 
 interface ImageFile {
   id: string
@@ -614,15 +615,12 @@ export function JpegToPdfConverter() {
                           </p>
                           <p className="text-xs text-muted-foreground">{formatFileSize(output.outputSize)}</p>
                         </div>
-                        <Button
-                          variant="outline"
+                        <MpDownloadButton
+                          blob={new Blob([output.outputUrl])}
+                          filename={output.outputName}
                           size="sm"
-                          onClick={() => downloadPdfOutput(output)}
-                          className="mt-2 w-full gap-1"
-                        >
-                          <Download className="w-3 h-3" />
-                          {tr("download")}
-                        </Button>
+                          className="mt-2 w-full"
+                        />
                       </div>
                     ))}
                   </div>
