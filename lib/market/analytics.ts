@@ -24,7 +24,7 @@ const TOOL_NAME_MAP: Record<string, string> = {
   "text-multi-sender": "短信群发",
   "social-auto-poster": "社媒自动发帖",
   "data-scraper": "数据抓取",
-  "jpeg-to-pdf": "图片转 PDF",
+  "jpeg-to-pdf": "图片 <-> PDF",
   "file-format-converter": "文件格式转换",
   "video-to-gif": "视频转 GIF",
   "bulk-image-resizer": "批量图片缩放",

@@ -125,8 +125,8 @@ export function Dashboard() {
     // File Converters
     {
       id: "jpeg-to-pdf",
-      name: t.tools?.jpegToPdf?.name || "JPEG to PDF Converter",
-      description: t.tools?.jpegToPdf?.description || "Convert and merge multiple images into high-quality PDF documents",
+      name: t.tools?.jpegToPdf?.name || "Image <-> PDF Converter",
+      description: t.tools?.jpegToPdf?.description || "Convert images to PDF or extract images from PDFs",
       category: "file-converters",
       icon: FileImage,
       isFavorite: true,

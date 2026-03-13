@@ -25,6 +25,95 @@ interface WorldClock {
   label: string
 }
 
+interface TimeParts {
+  year: number
+  month: number
+  day: number
+  hour: number
+  minute: number
+  second: number
+}
+
+function getTimeZoneParts(date: Date, timezone: string): TimeParts {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    hourCycle: "h23",
+  })
+
+  const parts = formatter.formatToParts(date)
+  const read = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((part) => part.type === type)?.value || 0)
+
+  return {
+    year: read("year"),
+    month: read("month"),
+    day: read("day"),
+    hour: read("hour"),
+    minute: read("minute"),
+    second: read("second"),
+  }
+}
+
+function getTimeZoneOffsetMinutes(date: Date, timezone: string) {
+  const parts = getTimeZoneParts(date, timezone)
+  const asUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second)
+  return Math.round((asUtc - date.getTime()) / 60000)
+}
+
+function pad(value: number) {
+  return String(value).padStart(2, "0")
+}
+
+function formatOffsetLabel(offsetMinutes: number) {
+  const sign = offsetMinutes >= 0 ? "+" : "-"
+  const absoluteMinutes = Math.abs(offsetMinutes)
+  const hours = Math.floor(absoluteMinutes / 60)
+  const minutes = absoluteMinutes % 60
+  return `UTC${sign}${pad(hours)}:${pad(minutes)}`
+}
+
+function createUtcDateFromLocalInput(sourceDate: string, sourceTime: string, timezone: string) {
+  const [year, month, day] = sourceDate.split("-").map((value) => Number.parseInt(value, 10))
+  const [hour, minute] = sourceTime.split(":").map((value) => Number.parseInt(value, 10))
+
+  if (![year, month, day, hour, minute].every(Number.isFinite)) {
+    return null
+  }
+
+  const targetLocalUtc = Date.UTC(year, month - 1, day, hour, minute, 0)
+  let offsetMinutes = getTimeZoneOffsetMinutes(new Date(targetLocalUtc), timezone)
+  let timestamp = targetLocalUtc - offsetMinutes * 60 * 1000
+
+  const recalculatedOffset = getTimeZoneOffsetMinutes(new Date(timestamp), timezone)
+  if (recalculatedOffset !== offsetMinutes) {
+    offsetMinutes = recalculatedOffset
+    timestamp = targetLocalUtc - offsetMinutes * 60 * 1000
+  }
+
+  return new Date(timestamp)
+}
+
+function formatInTimezone(date: Date, timezone: string) {
+  const parts = getTimeZoneParts(date, timezone)
+  return {
+    date: `${parts.year}-${pad(parts.month)}-${pad(parts.day)}`,
+    time: `${pad(parts.hour)}:${pad(parts.minute)}`,
+    fullDate: new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(date),
+  }
+}
+
 export function TimezoneConverter() {
   const { language } = useLanguage()
   const tr = (key: string) => t(language, `timezoneConverterTool.${key}`)
@@ -61,32 +150,25 @@ export function TimezoneConverter() {
     if (!sourceTime || !sourceDate) return null
 
     try {
-      const sourceDateTime = new Date(`${sourceDate}T${sourceTime}`)
+      const sourceDateTime = createUtcDateFromLocalInput(sourceDate, sourceTime, sourceTimezone)
       const sourceTimezoneObj = timezones.find((tz) => tz.id === sourceTimezone)
       const targetTimezoneObj = timezones.find((tz) => tz.id === targetTimezone)
 
-      // Mock conversion (in real app, use proper timezone library)
-      const sourceOffset = parseOffset(sourceTimezoneObj?.offset || "+00:00")
-      const targetOffset = parseOffset(targetTimezoneObj?.offset || "+00:00")
-      const offsetDiff = targetOffset - sourceOffset
+      if (!sourceDateTime) {
+        return null
+      }
 
-      const convertedTime = new Date(sourceDateTime.getTime() + offsetDiff * 60 * 60 * 1000)
+      const convertedTime = formatInTimezone(sourceDateTime, targetTimezone)
 
       return {
-        date: convertedTime.toISOString().split("T")[0],
-        time: convertedTime.toTimeString().slice(0, 5),
-        timezone: targetTimezoneObj?.name || targetTimezone,
+        date: convertedTime.date,
+        time: convertedTime.time,
+        timezone: `${targetTimezoneObj?.city || targetTimezone} (${targetTimezoneObj?.name || targetTimezoneObj?.id || targetTimezone}) ${formatOffsetLabel(getTimeZoneOffsetMinutes(sourceDateTime, targetTimezone))}`,
+        sourceTimezone: `${sourceTimezoneObj?.city || sourceTimezone} (${sourceTimezoneObj?.name || sourceTimezone}) ${formatOffsetLabel(getTimeZoneOffsetMinutes(sourceDateTime, sourceTimezone))}`,
       }
     } catch (error) {
       return null
     }
-  }
-
-  const parseOffset = (offset: string): number => {
-    const sign = offset[0] === "+" ? 1 : -1
-    const hours = Number.parseInt(offset.slice(1, 3))
-    const minutes = Number.parseInt(offset.slice(4, 6))
-    return sign * (hours + minutes / 60)
   }
 
   const getCurrentTimeInTimezone = (timezoneId: string) => {
@@ -94,14 +176,21 @@ export function TimezoneConverter() {
     const timezone = timezones.find((tz) => tz.id === timezoneId)
     if (!timezone) return { time: "00:00", date: "N/A" }
 
-    // Mock timezone conversion
-    const offset = parseOffset(timezone.offset)
-    const localTime = new Date(now.getTime() + offset * 60 * 60 * 1000)
+    const localTime = formatInTimezone(now, timezone.id)
 
     return {
-      time: localTime.toTimeString().slice(0, 5),
-      date: localTime.toDateString(),
+      time: localTime.time,
+      date: localTime.fullDate,
     }
+  }
+
+  const getTimezoneDisplay = (timezoneId: string, referenceDate = new Date()) => {
+    const timezone = timezones.find((tz) => tz.id === timezoneId)
+    if (!timezone) {
+      return timezoneId
+    }
+
+    return `${timezone.city} (${timezone.name}) ${formatOffsetLabel(getTimeZoneOffsetMinutes(referenceDate, timezoneId))}`
   }
 
   const addWorldClock = () => {
@@ -219,7 +308,7 @@ export function TimezoneConverter() {
                 <SelectContent>
                   {timezones.map((tz) => (
                     <SelectItem key={tz.id} value={tz.id}>
-                      {tz.city} ({tz.name}) {tz.offset}
+                      {getTimezoneDisplay(tz.id)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -235,7 +324,7 @@ export function TimezoneConverter() {
                 <SelectContent>
                   {timezones.map((tz) => (
                     <SelectItem key={tz.id} value={tz.id}>
-                      {tz.city} ({tz.name}) {tz.offset}
+                      {getTimezoneDisplay(tz.id)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -250,6 +339,7 @@ export function TimezoneConverter() {
                     <p className="text-lg font-bold">
                       {convertedResult.date} {convertedResult.time}
                     </p>
+                    <p className="text-sm text-muted-foreground">{convertedResult.sourceTimezone}</p>
                     <p className="text-sm text-muted-foreground">{convertedResult.timezone}</p>
                   </div>
                   <Button
@@ -290,7 +380,7 @@ export function TimezoneConverter() {
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{clock.label}</p>
                         <Badge variant="outline" className="text-xs">
-                          {timezone?.name}
+                          {timezone ? formatOffsetLabel(getTimeZoneOffsetMinutes(new Date(), timezone.id)) : "UTC+00:00"}
                         </Badge>
                       </div>
                       <p className="text-lg font-bold">{currentTime.time}</p>
@@ -336,7 +426,7 @@ export function TimezoneConverter() {
                   <SelectContent>
                     {timezones.map((tz) => (
                       <SelectItem key={tz.id} value={tz.id}>
-                        {tz.city} ({tz.name}) {tz.offset}
+                        {getTimezoneDisplay(tz.id)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -362,21 +452,23 @@ export function TimezoneConverter() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {["9:00 AM", "1:00 PM", "5:00 PM", "9:00 PM"].map((time) => (
-              <div key={time} className="p-3 border rounded-lg">
-                <p className="font-medium text-center mb-2">{time} UTC</p>
+            {[
+              { label: "09:00", hour: 9 },
+              { label: "13:00", hour: 13 },
+              { label: "17:00", hour: 17 },
+              { label: "21:00", hour: 21 },
+            ].map((slot) => (
+              <div key={slot.label} className="p-3 border rounded-lg">
+                <p className="font-medium text-center mb-2">{slot.label} UTC</p>
                 <div className="space-y-1">
                   {worldClocks.slice(0, 3).map((clock) => {
-                    const timezone = timezones.find((tz) => tz.id === clock.timezone)
-                    // Mock time calculation for meeting times
-                    const offset = parseOffset(timezone?.offset || "+00:00")
-                    const meetingHour = Number.parseInt(time.split(":")[0]) + (time.includes("PM") ? 12 : 0)
-                    const localHour = (meetingHour + offset + 24) % 24
-                    const localTime = `${localHour.toString().padStart(2, "0")}:00`
+                    const utcDate = new Date()
+                    utcDate.setUTCHours(slot.hour, 0, 0, 0)
+                    const localTime = formatInTimezone(utcDate, clock.timezone)
 
                     return (
                       <div key={clock.id} className="text-xs">
-                        <span className="text-muted-foreground">{clock.label}:</span> {localTime}
+                        <span className="text-muted-foreground">{clock.label}:</span> {localTime.time}
                       </div>
                     )
                   })}

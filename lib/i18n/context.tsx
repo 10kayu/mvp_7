@@ -54,16 +54,16 @@ const translations = {
   zh: {
     tools: {
       jpegToPdf: {
-        name: "JPEG 转 PDF 转换器",
-        description: "将多张图片转换并合并为高质量的 PDF 文档",
+        name: "图片 <-> PDF 转换器",
+        description: "将图片转换为 PDF，或从 PDF 提取图片",
       },
     },
   },
   en: {
     tools: {
       jpegToPdf: {
-        name: "JPEG to PDF Converter",
-        description: "Convert and merge multiple images into high-quality PDF documents",
+        name: "Image <-> PDF Converter",
+        description: "Convert images to PDF or extract images from PDFs",
       },
     },
   },

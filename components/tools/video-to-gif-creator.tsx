@@ -38,6 +38,8 @@ export function VideoToGifCreator() {
   const [isEngineReady, setIsEngineReady] = useState(false)
   const [engineError, setEngineError] = useState<string | null>(null)
   const [outputUrl, setOutputUrl] = useState<string | null>(null)
+  const [duration, setDuration] = useState(0)
+  const [conversionError, setConversionError] = useState<string | null>(null)
   const ffmpegRef = useRef<FFmpeg | null>(null)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -57,6 +59,10 @@ export function VideoToGifCreator() {
         size: file.size,
       }
       setVideo(videoFile)
+      setStartTime([0])
+      setEndTime([10])
+      setDuration(0)
+      setConversionError(null)
       setOutputUrl(null)
     }
   }, [video, outputUrl])
@@ -67,8 +73,8 @@ export function VideoToGifCreator() {
       "video/mp4": [".mp4"],
       "video/webm": [".webm"],
       "video/ogg": [".ogg"],
-      "video/avi": [".avi"],
-      "video/mov": [".mov"],
+      "video/x-msvideo": [".avi"],
+      "video/quicktime": [".mov"],
     },
     multiple: false,
   })
@@ -77,11 +83,13 @@ export function VideoToGifCreator() {
     if (video) {
       URL.revokeObjectURL(video.preview)
       setVideo(null)
+      setDuration(0)
     }
     if (outputUrl) {
       URL.revokeObjectURL(outputUrl)
       setOutputUrl(null)
     }
+    setConversionError(null)
   }
 
   const loadEngine = useCallback(async () => {
@@ -91,7 +99,7 @@ export function VideoToGifCreator() {
     setEngineError(null)
     try {
       const ffmpeg = new FFmpeg()
-      const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm"
+      const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd"
       await ffmpeg.load({
         coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
         wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
@@ -116,6 +124,7 @@ export function VideoToGifCreator() {
     if (!video) return
 
     setIsConverting(true)
+    setConversionError(null)
     try {
       await loadEngine()
       if (!ffmpegRef.current) {
@@ -132,13 +141,15 @@ export function VideoToGifCreator() {
       const inputName = `input.${extension}`
       const paletteName = "palette.png"
       const outputName = "output.gif"
-      const clipDuration = Math.max(0.1, endTime[0] - startTime[0])
+      const safeStartTime = Math.max(0, Math.min(startTime[0], Math.max(0, (duration || endTime[0]) - 0.1)))
+      const safeEndTime = Math.max(safeStartTime + 0.1, Math.min(endTime[0], duration || endTime[0]))
+      const clipDuration = Math.max(0.1, safeEndTime - safeStartTime)
       const bayerScale = Math.max(1, Math.min(5, Math.round((100 - quality[0]) / 20) + 1))
 
       await ffmpeg.writeFile(inputName, await fetchFile(video.file))
       await ffmpeg.exec([
         "-ss",
-        `${startTime[0]}`,
+        `${safeStartTime}`,
         "-t",
         `${clipDuration}`,
         "-i",
@@ -149,7 +160,7 @@ export function VideoToGifCreator() {
       ])
       await ffmpeg.exec([
         "-ss",
-        `${startTime[0]}`,
+        `${safeStartTime}`,
         "-t",
         `${clipDuration}`,
         "-i",
@@ -183,6 +194,7 @@ export function VideoToGifCreator() {
       }
     } catch (error) {
       console.error("Conversion failed:", error)
+      setConversionError(tx("GIF 生成失败，请缩短时长或降低宽度后重试", "GIF creation failed. Try a shorter clip or smaller width and retry."))
     } finally {
       setIsConverting(false)
     }
@@ -255,6 +267,8 @@ export function VideoToGifCreator() {
                   className="w-full h-full"
                   onLoadedMetadata={(e) => {
                     const duration = (e.target as HTMLVideoElement).duration
+                    setDuration(duration)
+                    setStartTime([0])
                     setEndTime([Math.min(10, duration)])
                   }}
                 />
@@ -288,7 +302,7 @@ export function VideoToGifCreator() {
                   <Slider
                     value={startTime}
                     onValueChange={setStartTime}
-                    max={Math.max(0, endTime[0] - 1)}
+                    max={Math.max(0, (duration || endTime[0]) - 0.5)}
                     min={0}
                     step={0.5}
                     className="w-full"
@@ -300,8 +314,8 @@ export function VideoToGifCreator() {
                   <Slider
                     value={endTime}
                     onValueChange={setEndTime}
-                    max={30}
-                    min={Math.max(1, startTime[0] + 1)}
+                    max={Math.max(1, duration || 30)}
+                    min={Math.max(0.5, startTime[0] + 0.5)}
                     step={0.5}
                     className="w-full"
                   />
@@ -309,6 +323,9 @@ export function VideoToGifCreator() {
               </div>
 
               <p className="text-sm text-muted-foreground">{tx("时长", "Duration")}: {formatTime(endTime[0] - startTime[0])}</p>
+              {duration > 0 && (
+                <p className="text-xs text-muted-foreground">{tx("视频总时长", "Video duration")}: {formatTime(duration)}</p>
+              )}
             </div>
 
             {/* Quality and Size */}
@@ -353,6 +370,7 @@ export function VideoToGifCreator() {
       {/* Convert Button */}
       <div className="flex flex-col items-center gap-3">
         {engineError && <p className="text-sm text-red-500">{engineError}</p>}
+        {conversionError && <p className="text-sm text-red-500">{conversionError}</p>}
         <Button
           onClick={convertToGif}
           disabled={!video || isConverting || isEngineLoading || !!engineError}

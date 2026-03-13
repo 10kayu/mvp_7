@@ -63,8 +63,8 @@ const getToolMetadata = (language: 'zh' | 'en') => {
 
   return {
     "jpeg-to-pdf": {
-      title: t.tools?.jpegToPdf?.name || "JPEG to PDF Converter",
-      description: t.tools?.jpegToPdf?.description || "Convert and merge multiple images into high-quality PDF documents",
+      title: t.tools?.jpegToPdf?.name || "Image <-> PDF Converter",
+      description: t.tools?.jpegToPdf?.description || "Convert images to PDF or extract images from PDFs",
       category: "file-converters",
     },
     "file-format-converter": {

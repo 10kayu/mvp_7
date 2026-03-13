@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useLanguage } from "@/components/language-provider"
 import { t } from "@/lib/i18n"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,13 +19,6 @@ interface Currency {
   flag: string
 }
 
-interface ExchangeRate {
-  from: string
-  to: string
-  rate: number
-  lastUpdated: string
-}
-
 const currencies: Currency[] = [
   { code: "USD", name: "US Dollar", symbol: "$", flag: "🇺🇸" },
   { code: "EUR", name: "Euro", symbol: "€", flag: "🇪🇺" },
@@ -39,19 +32,28 @@ const currencies: Currency[] = [
   { code: "BRL", name: "Brazilian Real", symbol: "R$", flag: "🇧🇷" },
 ]
 
-const mockRates: { [key: string]: number } = {
-  "USD-EUR": 0.85,
-  "USD-GBP": 0.73,
-  "USD-JPY": 110.0,
-  "USD-CAD": 1.25,
-  "USD-AUD": 1.35,
-  "USD-CHF": 0.92,
-  "USD-CNY": 6.45,
-  "USD-INR": 74.5,
-  "USD-BRL": 5.2,
-  "EUR-USD": 1.18,
-  "GBP-USD": 1.37,
-  "JPY-USD": 0.0091,
+const fallbackRatesToUsdBase: Record<string, number> = {
+  USD: 1,
+  EUR: 0.92,
+  GBP: 0.79,
+  JPY: 149.5,
+  CAD: 1.35,
+  AUD: 1.52,
+  CHF: 0.88,
+  CNY: 7.19,
+  INR: 82.95,
+  BRL: 4.97,
+}
+
+function getFallbackRate(from: string, to: string) {
+  const fromRate = fallbackRatesToUsdBase[from]
+  const toRate = fallbackRatesToUsdBase[to]
+
+  if (!fromRate || !toRate) {
+    throw new Error(`Unsupported currency pair: ${from}-${to}`)
+  }
+
+  return toRate / fromRate
 }
 
 export function CurrencyConverter() {
@@ -65,52 +67,95 @@ export function CurrencyConverter() {
   const [exchangeRate, setExchangeRate] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<string>("")
+  const [error, setError] = useState<string>("")
   const userInteractedRef = useRef(false)
+  const requestIdRef = useRef(0)
 
   // Bulk conversion
   const [bulkInput, setBulkInput] = useState("")
   const [bulkResults, setBulkResults] = useState<Array<{ amount: number; result: number }>>([])
 
-  const getExchangeRate = async (from: string, to: string): Promise<number> => {
-    // Mock API call
-    await new Promise((resolve) => setTimeout(resolve, 500))
+  const getExchangeRate = async (from: string, to: string): Promise<{ rate: number; effectiveAt: string }> => {
+    if (from === to) {
+      return {
+        rate: 1,
+        effectiveAt: new Date().toISOString(),
+      }
+    }
 
-    const key = `${from}-${to}`
-    const reverseKey = `${to}-${from}`
+    try {
+      const response = await fetch(`/api/tools/exchange-rates?from=${from}&to=${to}`, {
+        cache: "no-store",
+      })
 
-    if (mockRates[key]) {
-      return mockRates[key]
-    } else if (mockRates[reverseKey]) {
-      return 1 / mockRates[reverseKey]
-    } else {
-      // Generate a mock rate
-      return Math.random() * 2 + 0.5
+      if (!response.ok) {
+        throw new Error(`Exchange rate request failed with ${response.status}`)
+      }
+
+      const data = await response.json()
+      const rate = Number(data?.rate)
+      if (!Number.isFinite(rate) || rate <= 0) {
+        throw new Error("Invalid exchange rate response")
+      }
+
+      return {
+        rate,
+        effectiveAt: String(data?.effectiveAt || new Date().toISOString()),
+      }
+    } catch (error) {
+      return {
+        rate: getFallbackRate(from, to),
+        effectiveAt: new Date().toISOString(),
+      }
     }
   }
 
-  const convertCurrency = async () => {
-    if (!amount || fromCurrency === toCurrency) {
-      setConvertedAmount(Number.parseFloat(amount) || 0)
-      setExchangeRate(1)
+  const updateConvertedAmount = (rate: number | null, nextAmount = amount) => {
+    if (!nextAmount) {
+      setConvertedAmount(null)
       return
     }
 
+    const numericAmount = Number.parseFloat(nextAmount)
+    if (!Number.isFinite(numericAmount)) {
+      setConvertedAmount(null)
+      return
+    }
+
+    setConvertedAmount(numericAmount * (rate ?? 1))
+  }
+
+  const refreshExchangeRate = async (emitSuccessOnFinish = false) => {
+    const requestId = ++requestIdRef.current
     setIsLoading(true)
+    setError("")
+
     try {
-      const rate = await getExchangeRate(fromCurrency, toCurrency)
-      const result = (Number.parseFloat(amount) || 0) * rate
+      const { rate, effectiveAt } = await getExchangeRate(fromCurrency, toCurrency)
+
+      if (requestId !== requestIdRef.current) {
+        return
+      }
 
       setExchangeRate(rate)
-      setConvertedAmount(result)
-      setLastUpdated(new Date().toLocaleString())
-      if (userInteractedRef.current) {
+      updateConvertedAmount(rate)
+      setLastUpdated(new Date(effectiveAt).toLocaleString())
+
+      if (emitSuccessOnFinish) {
         emitToolSuccess("currency-converter")
-        userInteractedRef.current = false
       }
     } catch (error) {
       console.error("Conversion failed:", error)
+      if (requestId === requestIdRef.current) {
+        setError(tr("failedToLoadRate") || "Failed to load exchange rate")
+        setExchangeRate(null)
+        setConvertedAmount(null)
+      }
     } finally {
-      setIsLoading(false)
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false)
+        userInteractedRef.current = false
+      }
     }
   }
 
@@ -129,31 +174,48 @@ export function CurrencyConverter() {
     if (amounts.length === 0) return
 
     setIsLoading(true)
+    setError("")
     try {
-      const rate = await getExchangeRate(fromCurrency, toCurrency)
+      const { rate, effectiveAt } = await getExchangeRate(fromCurrency, toCurrency)
       const results = amounts.map((amount) => ({
         amount,
         result: amount * rate,
       }))
+
+      setExchangeRate(rate)
+      setLastUpdated(new Date(effectiveAt).toLocaleString())
       setBulkResults(results)
       if (results.length > 0) {
         emitToolSuccess("currency-converter")
       }
     } catch (error) {
       console.error("Bulk conversion failed:", error)
+      setError(tr("failedToLoadRate") || "Failed to load exchange rate")
     } finally {
       setIsLoading(false)
     }
   }
 
   useEffect(() => {
-    if (amount && fromCurrency && toCurrency) {
-      convertCurrency()
+    if (!fromCurrency || !toCurrency) {
+      return
     }
-  }, [amount, fromCurrency, toCurrency])
+
+    if (fromCurrency === toCurrency) {
+      setExchangeRate(1)
+      setLastUpdated(new Date().toLocaleString())
+      setError("")
+      return
+    }
+
+    void refreshExchangeRate(userInteractedRef.current)
+  }, [fromCurrency, toCurrency])
+
+  useEffect(() => {
+    updateConvertedAmount(exchangeRate)
+  }, [amount, exchangeRate])
 
   const formatCurrency = (value: number, currencyCode: string) => {
-    const currency = currencies.find((c) => c.code === currencyCode)
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: currencyCode,
@@ -276,6 +338,8 @@ export function CurrencyConverter() {
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    {error && <p className="text-sm text-red-500">{error}</p>}
+
                     <div className="text-center">
                       <div className="text-3xl font-bold text-[color:var(--productivity)]">
                         {convertedAmount !== null ? formatCurrency(convertedAmount, toCurrency) : "---"}
