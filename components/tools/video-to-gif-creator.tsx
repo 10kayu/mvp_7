@@ -179,11 +179,6 @@ export function VideoToGifCreator() {
       const blob = new Blob([body], { type: "image/gif" })
       const url = URL.createObjectURL(blob)
       setOutputUrl(url)
-
-      const link = document.createElement("a")
-      link.href = url
-      link.download = `${video.name.split(".")[0] || "video"}.gif`
-      link.click()
       emitToolSuccess("video-to-gif")
 
       try {
@@ -372,24 +367,34 @@ export function VideoToGifCreator() {
       <div className="flex flex-col items-center gap-3">
         {engineError && <p className="text-sm text-red-500">{engineError}</p>}
         {conversionError && <p className="text-sm text-red-500">{conversionError}</p>}
-        <Button
-          onClick={convertToGif}
-          disabled={!video || isConverting || isEngineLoading || !!engineError}
-          size="lg"
-          className="gap-2 bg-[color:var(--file-converters)] hover:bg-[color:var(--file-converters)]/90 text-white"
-        >
-          {isConverting || isEngineLoading ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              {isEngineLoading ? tx("加载引擎中...", "Loading Engine...") : tx("生成 GIF 中...", "Creating GIF...")}
-            </>
-          ) : (
-            <>
-              <Download className="w-4 h-4" />
-              {tx("生成 GIF", "Create GIF")}
-            </>
+        <div className="flex gap-3">
+          <Button
+            onClick={convertToGif}
+            disabled={!video || isConverting || isEngineLoading || !!engineError}
+            size="lg"
+            className="gap-2 bg-[color:var(--file-converters)] hover:bg-[color:var(--file-converters)]/90 text-white"
+          >
+            {isConverting || isEngineLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                {isEngineLoading ? tx("加载引擎中...", "Loading Engine...") : tx("生成 GIF 中...", "Creating GIF...")}
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4" />
+                {tx("生成 GIF", "Create GIF")}
+              </>
+            )}
+          </Button>
+          {outputUrl && (
+            <MpDownloadButton
+              blob={fetch(outputUrl).then(r => r.blob())}
+              filename={`${video?.name.split(".")[0] || "video"}.gif`}
+              size="lg"
+              variant="outline"
+            />
           )}
-        </Button>
+        </div>
       </div>
     </div>
   )

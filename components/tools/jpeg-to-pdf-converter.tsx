@@ -55,6 +55,7 @@ export function JpegToPdfConverter() {
   const [isPdfConverting, setIsPdfConverting] = useState(false)
   const [pdfError, setPdfError] = useState<string | null>(null)
   const [pdfPageCount, setPdfPageCount] = useState<number | null>(null)
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newImages = acceptedFiles.map((file) => ({
@@ -303,8 +304,8 @@ export function JpegToPdfConverter() {
       }
 
       // Save the PDF
-      const fileName = "converted-images.pdf"
-      pdf.save(fileName)
+      const pdfBlob = pdf.output('blob')
+      setPdfBlob(pdfBlob)
       emitToolSuccess("jpeg-to-pdf")
     } catch (error) {
       console.error("Conversion failed:", error)
@@ -458,7 +459,7 @@ export function JpegToPdfConverter() {
             </Card>
 
             {/* Convert Button */}
-            <div className="flex justify-center">
+            <div className="flex justify-center gap-3">
               <Button
                 onClick={convertToPdf}
                 disabled={images.length === 0 || isConverting}
@@ -477,6 +478,14 @@ export function JpegToPdfConverter() {
                   </>
                 )}
               </Button>
+              {pdfBlob && (
+                <MpDownloadButton
+                  blob={pdfBlob}
+                  filename="converted-images.pdf"
+                  size="lg"
+                  variant="outline"
+                />
+              )}
             </div>
           </div>
         </TabsContent>
