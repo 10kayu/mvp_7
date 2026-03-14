@@ -100,10 +100,10 @@ export function VideoToGifCreator() {
     setEngineError(null)
     try {
       const ffmpeg = new FFmpeg()
-      const baseURL = "/ffmpeg"
-      const coreURL = await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript")
-      const wasmURL = await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm")
-      await ffmpeg.load({ coreURL, wasmURL })
+      await ffmpeg.load({
+        coreURL: "/ffmpeg/ffmpeg-core.js",
+        wasmURL: "/ffmpeg/ffmpeg-core.wasm",
+      })
       ffmpegRef.current = ffmpeg
       setIsEngineReady(true)
     } catch (error) {
