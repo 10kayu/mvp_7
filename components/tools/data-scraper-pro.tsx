@@ -65,6 +65,8 @@ export function DataScraperPro() {
   const [scrapedData, setScrapedData] = useState<ScrapedData[]>([])
   const [isRunning, setIsRunning] = useState(false)
   const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([])
+  const [filterType, setFilterType] = useState<string>("all")
+  const [searchQuery, setSearchQuery] = useState<string>("")
 
   const dataTypes = [
     { id: "email", name: tr("emailAddresses"), icon: Mail, description: tr("extractEmailAddresses") },
@@ -317,7 +319,7 @@ export function DataScraperPro() {
                 ) : (
                   <div className="h-full flex flex-col">
                     <div className="p-4 border-b bg-muted/5 flex items-center gap-4">
-                      <Select defaultValue="all">
+                      <Select value={filterType} onValueChange={setFilterType}>
                         <SelectTrigger className="w-[180px] h-9">
                           <SelectValue placeholder={tr("filterByType")} />
                         </SelectTrigger>
@@ -331,12 +333,20 @@ export function DataScraperPro() {
                       </Select>
                       <div className="relative flex-1">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder={tr("searchWithinResults")} className="pl-9 h-9" />
+                        <Input
+                          placeholder={tr("searchWithinResults")}
+                          className="pl-9 h-9"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
                       </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                        {scrapedData.map((item, index) => (
+                        {scrapedData
+                          .filter(item => filterType === "all" || item.type === filterType)
+                          .filter(item => !searchQuery || item.value.toLowerCase().includes(searchQuery.toLowerCase()))
+                          .map((item, index) => (
                           <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors gap-3">
                             <div className="flex items-start gap-3 overflow-hidden">
                               <div className="mt-1 shrink-0">
