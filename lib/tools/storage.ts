@@ -2,7 +2,11 @@ import { promises as fs } from "fs"
 import path from "path"
 import crypto from "crypto"
 
-const BASE_DIR = process.env.TOOL_STORAGE_DIR || "/tmp/mvp7-tool-storage"
+const APP_REGION = process.env.DEPLOYMENT_REGION || "default"
+const BASE_DIR = path.join(
+  process.env.TOOL_STORAGE_DIR || "/tmp/mvp7-tool-storage",
+  APP_REGION
+)
 const CHUNK_DIR = path.join(BASE_DIR, "chunks")
 const FILE_DIR = path.join(BASE_DIR, "files")
 const INDEX_FILE = path.join(BASE_DIR, "index.json")

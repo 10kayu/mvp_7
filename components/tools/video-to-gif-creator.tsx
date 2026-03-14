@@ -53,7 +53,7 @@ export function VideoToGifCreator() {
         URL.revokeObjectURL(outputUrl)
       }
       const videoFile: VideoFile = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: Math.random().toString(36).slice(2, 11),
         file,
         preview: URL.createObjectURL(file),
         name: file.name,
@@ -100,11 +100,10 @@ export function VideoToGifCreator() {
     setEngineError(null)
     try {
       const ffmpeg = new FFmpeg()
-      const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd"
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
-      })
+      const baseURL = "/ffmpeg"
+      const coreURL = await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript")
+      const wasmURL = await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm")
+      await ffmpeg.load({ coreURL, wasmURL })
       ffmpegRef.current = ffmpeg
       setIsEngineReady(true)
     } catch (error) {
@@ -113,7 +112,7 @@ export function VideoToGifCreator() {
     } finally {
       setIsEngineLoading(false)
     }
-  }, [isEngineReady, isEngineLoading])
+  }, [isEngineReady, isEngineLoading, tx])
 
   useEffect(() => {
     if (video && !isEngineReady && !isEngineLoading) {
