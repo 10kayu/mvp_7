@@ -625,7 +625,7 @@ export function JpegToPdfConverter() {
                           <p className="text-xs text-muted-foreground">{formatFileSize(output.outputSize)}</p>
                         </div>
                         <MpDownloadButton
-                          blob={new Blob([output.outputUrl])}
+                          blob={fetch(output.outputUrl).then(r => r.blob())}
                           filename={output.outputName}
                           size="sm"
                           className="mt-2 w-full"

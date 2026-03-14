@@ -446,9 +446,9 @@ export function TimezoneConverter() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5" />
-            Meeting Time Finder
+            {tr("meetingTimeFinder")}
           </CardTitle>
-          <CardDescription>Find the best meeting time across multiple time zones</CardDescription>
+          <CardDescription>{tr("findBestMeetingTime")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

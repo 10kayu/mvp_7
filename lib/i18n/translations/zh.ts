@@ -1116,6 +1116,8 @@ export const zh = {
         gmt: "格林威治标准时间",
         cet: "中欧时间",
         jst: "日本标准时间",
+        meetingTimeFinder: "会议时间查找器",
+        findBestMeetingTime: "在多个时区中找到最佳会议时间",
     },
 
     // ==================== data-scraper ====================

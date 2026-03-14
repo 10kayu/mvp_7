@@ -314,7 +314,7 @@ export function TextUtilities() {
                     <MpDownloadButton
                       blob={new Blob([processedText], { type: 'text/plain' })}
                       filename="processed.txt"
-                      size="icon"
+                      size="sm"
                       variant="outline"
                       disabled={!processedText}
                     />
