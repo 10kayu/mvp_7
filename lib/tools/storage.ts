@@ -1,126 +1,44 @@
-import { promises as fs } from "fs"
-import path from "path"
+import { supabaseAdmin } from "@/lib/supabase-admin"
 import crypto from "crypto"
 
 const APP_REGION = process.env.DEPLOYMENT_REGION || "default"
-const BASE_DIR = path.join(
-  process.env.TOOL_STORAGE_DIR || "/tmp/mvp7-tool-storage",
-  APP_REGION
-)
-const CHUNK_DIR = path.join(BASE_DIR, "chunks")
-const FILE_DIR = path.join(BASE_DIR, "files")
-const INDEX_FILE = path.join(BASE_DIR, "index.json")
+const IS_INTL = APP_REGION === "INTL"
 
 export interface StoredFileRecord {
   id: string
   fileName: string
   mimeType: string
   size: number
-  filePath: string
   createdAt: string
+  fileID?: string
 }
 
-function sanitizeFileName(input: string) {
-  return String(input || "")
-    .trim()
-    .replace(/[^\w.\-() ]+/g, "_")
-    .replace(/\s+/g, " ")
-    .slice(0, 200) || "file.bin"
+const SUPABASE_BUCKET = "tool-storage-intl"
+
+let cloudbaseApp: any = null
+let collectionInitialized = false
+
+async function getCloudbaseApp() {
+  if (cloudbaseApp) return cloudbaseApp
+  const tcb = await import("@cloudbase/node-sdk")
+  cloudbaseApp = tcb.default.init({
+    env: process.env.NEXT_PUBLIC_WECHAT_CLOUDBASE_ID || "",
+    secretId: process.env.CLOUDBASE_SECRET_ID || "",
+    secretKey: process.env.CLOUDBASE_SECRET_KEY || "",
+  })
+  return cloudbaseApp
 }
 
-async function ensureStorageReady() {
-  await fs.mkdir(CHUNK_DIR, { recursive: true })
-  await fs.mkdir(FILE_DIR, { recursive: true })
-
+async function ensureCollection() {
+  if (collectionInitialized) return
+  const app = await getCloudbaseApp()
+  const db = app.database()
   try {
-    await fs.access(INDEX_FILE)
-  } catch {
-    await fs.writeFile(INDEX_FILE, "[]", "utf8")
+    await db.createCollection("tool_files")
+  } catch (e: any) {
+    // Collection already exists
   }
-}
-
-async function readIndex(): Promise<StoredFileRecord[]> {
-  await ensureStorageReady()
-  const raw = await fs.readFile(INDEX_FILE, "utf8")
-
-  try {
-    const data = JSON.parse(raw)
-    if (!Array.isArray(data)) return []
-    return data.filter((item) => item && typeof item.id === "string")
-  } catch {
-    return []
-  }
-}
-
-async function writeIndex(records: StoredFileRecord[]) {
-  await ensureStorageReady()
-  await fs.writeFile(INDEX_FILE, JSON.stringify(records, null, 2), "utf8")
-}
-
-function getChunkUploadDir(uploadId: string) {
-  return path.join(CHUNK_DIR, uploadId.replace(/[^\w\-]/g, "_"))
-}
-
-export async function saveChunk(params: {
-  uploadId: string
-  chunkIndex: number
-  chunkData: Buffer
-}) {
-  await ensureStorageReady()
-  const dir = getChunkUploadDir(params.uploadId)
-  await fs.mkdir(dir, { recursive: true })
-  const filePath = path.join(dir, `${params.chunkIndex}.part`)
-  await fs.writeFile(filePath, params.chunkData)
-}
-
-export async function completeChunkUpload(params: {
-  uploadId: string
-  fileName: string
-  mimeType?: string
-}) {
-  await ensureStorageReady()
-  const uploadDir = getChunkUploadDir(params.uploadId)
-  const chunkNames = await fs.readdir(uploadDir)
-
-  const orderedParts = chunkNames
-    .filter((name) => name.endsWith(".part"))
-    .sort((a, b) => Number(a.replace(".part", "")) - Number(b.replace(".part", "")))
-
-  if (orderedParts.length === 0) {
-    throw new Error("No chunks found for upload")
-  }
-
-  const safeName = sanitizeFileName(params.fileName)
-  const fileId = crypto.randomUUID()
-  const outputPath = path.join(FILE_DIR, `${fileId}__${safeName}`)
-
-  const target = await fs.open(outputPath, "w")
-  try {
-    for (const partName of orderedParts) {
-      const partPath = path.join(uploadDir, partName)
-      const bytes = await fs.readFile(partPath)
-      await target.write(bytes)
-    }
-  } finally {
-    await target.close()
-  }
-
-  const stat = await fs.stat(outputPath)
-  await fs.rm(uploadDir, { recursive: true, force: true })
-
-  const record: StoredFileRecord = {
-    id: fileId,
-    fileName: safeName,
-    mimeType: String(params.mimeType || "application/octet-stream"),
-    size: stat.size,
-    filePath: outputPath,
-    createdAt: new Date().toISOString(),
-  }
-
-  const records = await readIndex()
-  records.unshift(record)
-  await writeIndex(records)
-  return record
+  collectionInitialized = true
 }
 
 export async function saveDirectFile(params: {
@@ -128,49 +46,85 @@ export async function saveDirectFile(params: {
   mimeType?: string
   data: Buffer
 }) {
-  await ensureStorageReady()
-  const safeName = sanitizeFileName(params.fileName)
   const fileId = crypto.randomUUID()
-  const outputPath = path.join(FILE_DIR, `${fileId}__${safeName}`)
-
-  await fs.writeFile(outputPath, params.data)
-  const stat = await fs.stat(outputPath)
-
-  const record: StoredFileRecord = {
+  const filePath = `tool-storage/${fileId}__${params.fileName}`
+  const record = {
     id: fileId,
-    fileName: safeName,
-    mimeType: String(params.mimeType || "application/octet-stream"),
-    size: stat.size,
-    filePath: outputPath,
+    fileName: params.fileName,
+    mimeType: params.mimeType || "application/octet-stream",
+    size: params.data.length,
     createdAt: new Date().toISOString(),
   }
 
-  const records = await readIndex()
-  records.unshift(record)
-  await writeIndex(records)
+  if (IS_INTL) {
+    const { error } = await supabaseAdmin.storage
+      .from(SUPABASE_BUCKET)
+      .upload(filePath, params.data, {
+        contentType: params.mimeType || "application/octet-stream",
+        upsert: false,
+      })
+    if (error) throw new Error(`Upload failed: ${error.message}`)
+  } else {
+    const app = await getCloudbaseApp()
+    await ensureCollection()
+    const uploadResult = await app.uploadFile({
+      cloudPath: filePath,
+      fileContent: params.data,
+    })
+    record.fileID = uploadResult.fileID
+    const db = app.database()
+    await db.collection("tool_files").add(record)
+  }
+
   return record
 }
 
 export async function listStoredFiles() {
-  const records = await readIndex()
-  return records
-    .filter((item) => Boolean(item?.id && item?.filePath))
-    .sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1))
+  if (IS_INTL) {
+    const { data, error } = await supabaseAdmin.storage.from(SUPABASE_BUCKET).list("tool-storage")
+    if (error) throw new Error(`List failed: ${error.message}`)
+    return (data || []).map((file: any) => {
+      const [id, ...nameParts] = file.name.split("__")
+      return {
+        id,
+        fileName: nameParts.join("__") || file.name,
+        mimeType: "application/octet-stream",
+        size: file.metadata?.size || 0,
+        createdAt: file.created_at || new Date().toISOString(),
+      }
+    }).sort((a: any, b: any) => (a.createdAt > b.createdAt ? -1 : 1))
+  } else {
+    const app = await getCloudbaseApp()
+    await ensureCollection()
+    const db = app.database()
+    const res = await db.collection("tool_files").orderBy("createdAt", "desc").get()
+    return res.data || []
+  }
 }
 
 export async function getStoredFileById(id: string) {
-  const records = await readIndex()
-  return records.find((item) => item.id === id) || null
+  const files = await listStoredFiles()
+  return files.find((f) => f.id === id) || null
 }
 
 export async function deleteStoredFileById(id: string) {
-  const records = await readIndex()
-  const target = records.find((item) => item.id === id)
-  if (!target) return false
+  const files = await listStoredFiles()
+  const file = files.find((f) => f.id === id)
+  if (!file) return false
 
-  await fs.rm(target.filePath, { force: true })
-  const next = records.filter((item) => item.id !== id)
-  await writeIndex(next)
+  const filePath = `tool-storage/${id}__${file.fileName}`
+
+  if (IS_INTL) {
+    const { error } = await supabaseAdmin.storage.from(SUPABASE_BUCKET).remove([filePath])
+    if (error) throw new Error(`Delete failed: ${error.message}`)
+  } else {
+    const app = await getCloudbaseApp()
+    await ensureCollection()
+    await app.deleteFile({ fileList: [filePath] })
+    const db = app.database()
+    await db.collection("tool_files").where({ id }).remove()
+  }
+
   return true
 }
 
